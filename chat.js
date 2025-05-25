@@ -177,3 +177,152 @@ onAuthStateChanged(auth, user => {
     window.location.href = "index.html";
   }
 });
+
+
+// 画像圧縮関数（40KB以内のJPEGに圧縮）
+async function compressImageToJpeg(file, maxSize = 40 * 1024) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        let width = img.width;
+        let height = img.height;
+
+        const maxDim = 800;
+        if (width > height && width > maxDim) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else if (height > width && height > maxDim) {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        let quality = 0.92;
+        function tryCompress() {
+          const dataUrl = canvas.toDataURL("image/jpeg", quality);
+          const base64Length = dataUrl.length - "data:image/jpeg;base64,".length;
+          const sizeInBytes = 4 * Math.ceil(base64Length / 3) * 0.75;
+          if (sizeInBytes <= maxSize || quality <= 0.4) {
+            resolve(dataUrl);
+          } else {
+            quality -= 0.05;
+            tryCompress();
+          }
+        }
+        tryCompress();
+      };
+      img.onerror = () => reject("画像の読み込みに失敗しました。");
+      img.src = reader.result;
+    };
+    reader.onerror = () => reject("ファイルの読み込みに失敗しました。");
+    reader.readAsDataURL(file);
+  });
+}
+
+// 1ヶ月に送信可能な画像枚数の上限
+const MAX_IMAGES_PER_MONTH = 8;
+
+// 画像送信処理
+async function sendImage(event) {
+  event.preventDefault();
+  if (!currentUser) {
+    alert("ログインしてください。");
+    return;
+  }
+  const fileInput = document.getElementById("image-input");
+  if (!fileInput.files.length) {
+    alert("画像を選択してください。");
+    return;
+  }
+
+  const file = fileInput.files[0];
+
+  try {
+    // 送信上限チェック
+    const now = Date.now();
+    const oneMonthAgo = now - 30 * 24 * 60 * 60 * 1000;
+    const imagesRef = ref(db, `users/${currentUser.uid}/sentImages`);
+    const snapshot = await get(imagesRef);
+    let countThisMonth = 0;
+
+    if (snapshot.exists()) {
+      snapshot.forEach(childSnap => {
+        const data = childSnap.val();
+        if (data.timestamp > oneMonthAgo) {
+          countThisMonth++;
+        }
+      });
+    }
+    if (countThisMonth >= MAX_IMAGES_PER_MONTH) {
+      alert(`今月の画像送信上限(${MAX_IMAGES_PER_MONTH}枚)に達しました。`);
+      return;
+    }
+
+    // 圧縮
+    const compressedDataUrl = await compressImageToJpeg(file);
+
+    // チャット内に画像メッセージを追加
+    if (!currentChatId) {
+      alert("チャット相手を選択してください。");
+      return;
+    }
+
+    const messagesRef = ref(db, `chats/${currentChatId}/messages`);
+    await push(messagesRef, {
+      sender: currentUser.uid,
+      type: "image",
+      imageDataUrl: compressedDataUrl,
+      timestamp: now
+    });
+
+    // ユーザーの送信画像履歴に保存（カウント管理用）
+    await push(imagesRef, {
+      timestamp: now
+    });
+
+    fileInput.value = "";
+  } catch (error) {
+    console.error("画像送信エラー:", error);
+    alert("画像送信に失敗しました。");
+  }
+}
+
+// 画像メッセージの表示追加（既存loadMessagesの中などに追加して使う例）
+function appendImageMessage(message) {
+  const messagesDiv = document.getElementById("messages");
+  const div = document.createElement("div");
+  div.className = "image-message";
+  div.innerHTML = `
+    <strong>${message.sender === currentUser.uid ? "あなた" : "相手"}</strong><br>
+    <img src="${message.imageDataUrl}" style="max-width:200px;max-height:200px;" />
+  `;
+  messagesDiv.appendChild(div);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+// loadMessages関数内で画像メッセージ判定を追加例
+function loadMessages() {
+  const messagesDiv = document.getElementById("messages");
+  messagesDiv.innerHTML = "";
+
+  const messagesRef = ref(db, `chats/${currentChatId}/messages`);
+  onChildAdded(messagesRef, snapshot => {
+    const message = snapshot.val();
+    if (message.type === "image") {
+      appendImageMessage(message);
+    } else {
+      // テキストメッセージ等既存処理
+      const div = document.createElement("div");
+      div.textContent = `${message.sender === currentUser.uid ? "あなた" : "相手"}: ${message.text}`;
+      messagesDiv.appendChild(div);
+    }
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  });
+}
