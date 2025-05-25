@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ログイン - ChatGo</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #e0f2e9;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    form {
+      background: white;
+      padding: 2em;
+      border-radius: 1em;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    input {
+      display: block;
+      margin-bottom: 1em;
+      padding: 0.5em;
+      width: 100%;
+    }
+    button {
+      padding: 0.5em;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      width: 100%;
+      border-radius: 0.5em;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .google-btn {
+      background-color: #db4437;
+    }
+  </style>
+</head>
+<body>
+  <h1>ChatGo ログイン</h1>
+  <form id="loginForm">
+    <input type="email" id="email" placeholder="メールアドレス" required>
+    <input type="password" id="password" placeholder="パスワード" required>
+    <button type="submit">ログイン</button>
+    <button type="button" class="google-btn" id="googleLogin">Googleでログイン</button>
+    <p><a href="reset.html">パスワードを忘れた場合</a></p>
+    <p><a href="register.html">新規登録はこちら</a></p>
+  </form>
+
+  <script type="module">
+    import {
+      auth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup
+    } from "./app.js";
+
+    const loginForm = document.getElementById('loginForm');
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        sessionStorage.setItem('userId', user.uid);
+        window.location.href = 'chat.html';
+      } catch (error) {
+        alert("ログイン失敗：" + error.message);
+      }
+    });
+
+    document.getElementById('googleLogin').addEventListener('click', async () => {
+      const provider = new GoogleAuthProvider();
+      try {
+        const result = await signInWithPopup(auth, provider);
+        sessionStorage.setItem('userId', result.user.uid);
+        window.location.href = 'chat.html';
+      } catch (error) {
+        alert("Googleログイン失敗：" + error.message);
+      }
+    });
+  </script>
+</body>
+</html>
+
