@@ -183,11 +183,28 @@ onAuthStateChanged(auth, user => {
 // image-formのsubmitイベントで画像送信
 document.getElementById("image-form").addEventListener("submit", async (e) => {
   e.preventDefault();
+
   const file = document.getElementById("image-input").files[0];
-  if (!file) return alert("画像を選択してください");
-  const success = await sendCompressedImage(file, currentChatId, currentUser, db);
-  if (success) {
+  if (!file || !currentChatId || !currentUser) {
+    alert("画像かチャット対象が見つかりません");
+    return;
+  }
+
+  try {
+    const base64 = await compressImageToTargetSize(file, 30 * 1024); // 30KB以下
+    const messagesRef = ref(db, `chats/${currentChatId}/messages`);
+    await push(messagesRef, {
+      type: "image",
+      imageDataUrl: base64,
+      sender: currentUser.uid,
+      timestamp: Date.now()
+    });
+
+    alert("画像を送信しました！");
     document.getElementById("image-input").value = "";
+  } catch (err) {
+    console.error("送信失敗:", err);
+    alert("画像送信に失敗しました。");
   }
 });
 //サイズ調整
