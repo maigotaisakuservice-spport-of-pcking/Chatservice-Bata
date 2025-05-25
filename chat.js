@@ -260,22 +260,17 @@ async function compressImageToTargetSize(file, maxBase64Size = 30 * 1024) {
 
 
 //chat画面に画像表示スクリプト
-function displayMessage(message) {
-  const messagesDiv = document.getElementById("messages");
-  const div = document.createElement("div");
-
-  if (message.type === "image" && message.imageDataUrl) {
-    const img = document.createElement("img");
-    img.src = message.imageDataUrl;
-    img.loading = "lazy";
-    img.alt = "画像メッセージ";
-    img.style.maxWidth = "150px";
-    img.style.maxHeight = "150px";
-    img.style.cursor = "pointer";
-    img.onclick = () => openImageModal(message.imageDataUrl); // 拡大表示
-
-    div.appendChild(img);
-  } else {
+if (message.type === "image" && message.imageDataUrl) {
+  const img = document.createElement("img");
+  img.src = message.imageDataUrl;
+  img.loading = "lazy";
+  img.alt = "画像メッセージ";
+  img.style.maxWidth = "150px";
+  img.style.maxHeight = "150px";
+  img.style.cursor = "pointer";
+  img.onclick = () => openImageModal(message.imageDataUrl);
+  div.appendChild(img);
+} else {
     div.textContent = `${message.sender === currentUser.uid ? "あなた" : "相手"}: ${message.text || ""}`;
   }
 
