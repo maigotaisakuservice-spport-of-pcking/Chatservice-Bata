@@ -200,7 +200,9 @@ function displayMessage(message) {
 
   if (message.type === "image" && message.imageDataUrl) {
     const img = document.createElement("img");
-    img.src = message.imageDataUrl;
+    img.src = message.imageDataUrl;  // ここに自動でbase64が入る
+    img.loading = "lazy";            // ← lazy読み込みを有効化
+    img.alt = "画像メッセージ";
     img.style.maxWidth = "150px";
     img.style.maxHeight = "150px";
     div.appendChild(img);
