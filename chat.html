@@ -114,6 +114,10 @@
 
   <main id="chat-area">
   <div id="messages"></div>
+   <!-- 画像モーダル表示 -->
+　　 <div id="image-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index:9999;">
+     <img id="modal-image" src="" style="max-width:90%; max-height:90%;">  
+   </div>
     <form id="message-form" onsubmit="sendMessage(event)">
       <input type="text" id="message-input" placeholder="メッセージを入力">
       <button id="send-button">送信</button>
@@ -125,5 +129,6 @@
 </form>
   </main>
   <script type="module" src="chat.js"></script>
+  <script type="module" src="imageget.js"></script>
 </body>
 </html>
