@@ -258,35 +258,4 @@ async function compressImageToTargetSize(file, maxBase64Size = 30 * 1024) {
   });
 }
 
-
-//chat画面に画像表示スクリプト
-if (message.type === "image" && message.imageDataUrl) {
-  const img = document.createElement("img");
-  img.src = message.imageDataUrl;
-  img.loading = "lazy";
-  img.alt = "画像メッセージ";
-  img.style.maxWidth = "150px";
-  img.style.maxHeight = "150px";
-  img.style.cursor = "pointer";
-  img.onclick = () => openImageModal(message.imageDataUrl);
-  div.appendChild(img);
-} else {
-    div.textContent = `${message.sender === currentUser.uid ? "あなた" : "相手"}: ${message.text || ""}`;
-  }
-
-  messagesDiv.appendChild(div);
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
-}
-//クリックで画像拡大表示スクリプト
-function openImageModal(dataUrl) {
-  const modal = document.getElementById("image-modal");
-  const img = document.getElementById("modal-image");
-  img.src = dataUrl;
-  modal.style.display = "flex";
-}
-
-// モーダルクリックで閉じる
-document.getElementById("image-modal").addEventListener("click", () => {
-  document.getElementById("image-modal").style.display = "none";
-});
-
+//chat画面に画像を表示するスクリプト。調整中のため退避ファイルに保存中
