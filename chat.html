@@ -1,63 +1,125 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>ChatGo - チャット</title>
-<style>
-  body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-  #menu { display: none; flex-direction: column; position: fixed; top: 40px; right: 10px; background: #f0f0f0; border: 1px solid #ccc; padding: 10px; width: 250px; max-height: 400px; overflow-y: auto; z-index: 1000; }
-  #friend-list { max-height: 150px; overflow-y: auto; border: 1px solid #ccc; margin-bottom: 10px; }
-  .friend-item { cursor: pointer; padding: 5px; border-bottom: 1px solid #ddd; }
-  .friend-item:hover { background-color: #eee; }
-  #chat-container { padding: 10px; max-width: 700px; margin: auto; }
-  #messages { border: 1px solid #ccc; height: 300px; overflow-y: auto; padding: 5px; margin-bottom: 10px; background: #fafafa; }
-  .message { margin-bottom: 5px; }
-  .message.self { text-align: right; color: blue; }
-  #input-area { display: flex; gap: 5px; }
-  #message-input { flex: 1; padding: 8px; }
-  button { padding: 8px 12px; }
-  #video-container { margin-top: 15px; display: flex; gap: 10px; }
-  video { width: 45%; background: black; border: 1px solid #ccc; }
-  #notifications { position: fixed; top: 5px; right: 5px; z-index: 2000; }
-  .toast { background: #333; color: #fff; padding: 10px 15px; border-radius: 4px; margin-bottom: 5px; opacity: 0.9; }
-</style>
+  <meta charset="UTF-8">
+  <title>ChatGo - チャット</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f0f0f0;
+    }
+
+    header {
+      background-color: #2e7d32;
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .menu-button {
+      font-size: 24px;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+    }
+
+    .menu {
+      position: absolute;
+      top: 50px;
+      right: 20px;
+      background-color: white;
+      border: 1px solid #ccc;
+      width: 250px;
+      display: none;
+      flex-direction: column;
+      z-index: 1000;
+      padding: 10px;
+    }
+
+    .menu input {
+      width: calc(100% - 20px);
+      margin-bottom: 10px;
+      padding: 5px;
+    }
+
+    .menu button {
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      padding: 5px;
+      margin-bottom: 5px;
+      cursor: pointer;
+    }
+
+    #chat-area {
+      padding: 20px;
+    }
+
+    .friend-list {
+      margin-top: 10px;
+    }
+
+    .friend-item {
+      cursor: pointer;
+      padding: 4px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .friend-item:hover {
+      background-color: #e0e0e0;
+    }
+
+    #messages {
+      min-height: 300px;
+      max-height: 400px;
+      overflow-y: auto;
+      background: #fff;
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+
+    #message-form {
+      display: flex;
+      margin-top: 10px;
+    }
+
+    #message-input {
+      flex: 1;
+      padding: 8px;
+    }
+
+    #send-button {
+      padding: 8px 16px;
+      background-color: #2e7d32;
+      color: white;
+      border: none;
+    }
+  </style>
 </head>
 <body>
+  <header>
+    <h1>ChatGo</h1>
+     <a href="profile.html">プロフィールページへ</a>
+    <button class="menu-button" onclick="toggleMenu()">≡</button>
+    <div class="menu" id="menu">
+      <input type="email" id="friend-email" placeholder="メールで検索">
+      <button onclick="addFriend()">フレンド追加</button>
+      <div class="friend-list" id="friend-list"></div>
+    </div>
+  </header>
 
-<header>
-  <button onclick="toggleMenu()">メニュー</button>
-</header>
+  <main id="chat-area">
+    <div id="messages"></div>
+    <form id="message-form" onsubmit="sendMessage(event)">
+      <input type="text" id="message-input" placeholder="メッセージを入力">
+      <button id="send-button">送信</button>
+    </form>
+  </main>
 
-<div id="menu">
-  <h3>フレンド追加</h3>
-  <input type="email" id="friend-email" placeholder="メールアドレスを入力" />
-  <button onclick="addFriend()">追加</button>
-  <h3>フレンドリスト</h3>
-  <div id="friend-list"></div>
-</div>
-
-<div id="chat-container">
-  <div id="messages"></div>
-
-  <form id="send-form" onsubmit="sendMessage(event)">
-    <input type="text" id="message-input" placeholder="メッセージを入力" autocomplete="off" />
-    <button type="submit">送信</button>
-  </form>
-
-  <div style="margin-top:10px;">
-    <label>画像添付: <input type="file" id="image-input" accept="image/*" /></label>
-    <label>音声添付: <input type="file" id="audio-input" accept="audio/*" /></label>
-  </div>
-
-  <div id="video-container">
-    <video id="local-video" autoplay muted></video>
-    <video id="remote-video" autoplay></video>
-  </div>
-</div>
-
-<div id="notifications"></div>
-
-<script type="module" src="./chat.js"></script>
+  <script type="module" src="chat.js"></script>
 </body>
 </html>
