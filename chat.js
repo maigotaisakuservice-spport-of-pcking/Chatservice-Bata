@@ -174,6 +174,6 @@ onAuthStateChanged(auth, user => {
     loadFriendList();
   } else {
     // 未ログインの場合、ログインページにリダイレクト
-    window.location.href = "login.html";
+    window.location.href = "index.html";
   }
 });
