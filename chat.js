@@ -191,3 +191,23 @@ document.getElementById("image-form").addEventListener("submit", async (e) => {
     document.getElementById("image-input").value = "";
   }
 });
+
+
+//chat画面に画像表示スクリプト
+function displayMessage(message) {
+  const messagesDiv = document.getElementById("messages");
+  const div = document.createElement("div");
+
+  if (message.type === "image" && message.imageDataUrl) {
+    const img = document.createElement("img");
+    img.src = message.imageDataUrl;
+    img.style.maxWidth = "150px";
+    img.style.maxHeight = "150px";
+    div.appendChild(img);
+  } else {
+    div.textContent = `${message.sender === currentUser.uid ? "あなた" : "相手"}: ${message.text || ""}`;
+  }
+
+  messagesDiv.appendChild(div);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
