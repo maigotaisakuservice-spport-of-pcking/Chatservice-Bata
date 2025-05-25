@@ -258,4 +258,5 @@ async function compressImageToTargetSize(file, maxBase64Size = 30 * 1024) {
   });
 }
 
-//chat画面に画像を表示するスクリプト。調整中のため退避ファイルに保存中
+//chat画面に画像を表示するスクリプト 
+//調整中のため退避ファイルに保存中
