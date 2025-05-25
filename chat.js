@@ -177,3 +177,17 @@ onAuthStateChanged(auth, user => {
     window.location.href = "index.html";
   }
 });
+
+//imagepost for Firebase
+import { sendCompressedImage } from "./imagepost.js";
+
+// image-formのsubmitイベントで画像送信
+document.getElementById("image-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const file = document.getElementById("image-input").files[0];
+  if (!file) return alert("画像を選択してください");
+  const success = await sendCompressedImage(file, currentChatId, currentUser, db);
+  if (success) {
+    document.getElementById("image-input").value = "";
+  }
+});
