@@ -1,8 +1,8 @@
-// chat.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
 import {
   getAuth,
-  onAuthStateChanged
+  onAuthStateChanged,
+  signOut
 } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
 import {
   getDatabase,
@@ -11,11 +11,10 @@ import {
   push,
   onChildAdded,
   get,
-  child,
   update
 } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
 
-// Firebase の設定
+// Firebase初期設定
 const firebaseConfig = {
   apiKey: "AIzaSyA7CWUhLBKG_Oabxxw_7RfBpSANUoDh42s",
   authDomain: "moodmirror-login.firebaseapp.com",
@@ -27,7 +26,6 @@ const firebaseConfig = {
   measurementId: "G-TPJXPMPSGZ"
 };
 
-// Firebase の初期化
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
@@ -35,56 +33,59 @@ const db = getDatabase(app);
 let currentUser = null;
 let currentChatId = null;
 
-// メニューの表示/非表示を切り替える関数
-window.toggleMenu = function() {
+// --- UI要素 ---
+const messagesDiv = document.getElementById("messages");
+const friendListDiv = document.getElementById("friend-list");
+const localVideo = document.getElementById("local-video");
+const remoteVideo = document.getElementById("remote-video");
+const imageInput = document.getElementById("image-input");
+const audioInput = document.getElementById("audio-input");
+const notificationsDiv = document.getElementById("notifications");
+
+let peerConnection = null;
+const ICE_CONFIG = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+
+// --- メニュー切替 ---
+window.toggleMenu = () => {
   const menu = document.getElementById("menu");
   menu.style.display = menu.style.display === "flex" ? "none" : "flex";
 };
 
-// フレンドを追加する関数
-window.addFriend = async function() {
+// --- フレンド追加 ---
+window.addFriend = async () => {
   const email = document.getElementById("friend-email").value.trim();
   if (!email) return alert("メールアドレスを入力してください。");
-
   try {
     const usersRef = ref(db, "users");
     const snapshot = await get(usersRef);
     let friendUid = null;
-
     snapshot.forEach(childSnapshot => {
       const userData = childSnapshot.val();
       if (userData.email === email) {
         friendUid = childSnapshot.key;
       }
     });
-
     if (!friendUid) {
       alert("ユーザーが見つかりません。");
       return;
     }
-
-    // フレンドリストに追加
     const updates = {};
     updates[`users/${currentUser.uid}/friends/${friendUid}`] = true;
     updates[`users/${friendUid}/friends/${currentUser.uid}`] = true;
     await update(ref(db), updates);
-
     alert("フレンドを追加しました。");
     document.getElementById("friend-email").value = "";
     loadFriendList();
-  } catch (error) {
-    console.error("フレンド追加エラー:", error);
+  } catch (e) {
+    console.error(e);
   }
 };
 
-// フレンドリストを読み込む関数
+// --- フレンドリスト読み込み ---
 async function loadFriendList() {
-  const friendListDiv = document.getElementById("friend-list");
   friendListDiv.innerHTML = "";
-
   const userRef = ref(db, `users/${currentUser.uid}/friends`);
   const snapshot = await get(userRef);
-
   if (snapshot.exists()) {
     const friends = snapshot.val();
     for (const friendUid in friends) {
@@ -92,16 +93,14 @@ async function loadFriendList() {
       const friendData = friendDataSnapshot.val();
       const div = document.createElement("div");
       div.className = "friend-item";
-      div.textContent = friendData.displayName || friendData.email;
-      div.onclick = () => {
-        startChatWith(friendUid);
-      };
+      div.textContent = friendData.displayName || friendData.email || "名無し";
+      div.onclick = () => startChatWith(friendUid);
       friendListDiv.appendChild(div);
     }
   }
 }
 
-// チャットを開始する関数
+// --- チャット開始 ---
 async function startChatWith(friendUid) {
   const chatsRef = ref(db, "chats");
   const snapshot = await get(chatsRef);
@@ -119,7 +118,7 @@ async function startChatWith(friendUid) {
   });
 
   if (!chatId) {
-    // 新しいチャットを作成
+    // 新チャット作成
     const newChatRef = push(chatsRef);
     chatId = newChatRef.key;
     await set(newChatRef, {
@@ -130,50 +129,142 @@ async function startChatWith(friendUid) {
       messages: {}
     });
   }
-
   currentChatId = chatId;
+  clearMessages();
   loadMessages();
+  closePeerConnection();
+  await setupWebRTC(friendUid);
 }
 
-// メッセージを読み込む関数
-function loadMessages() {
-  const messagesDiv = document.getElementById("messages");
+// --- メッセージ表示クリア ---
+function clearMessages() {
   messagesDiv.innerHTML = "";
+}
 
+// --- メッセージ読み込み ---
+function loadMessages() {
   const messagesRef = ref(db, `chats/${currentChatId}/messages`);
   onChildAdded(messagesRef, snapshot => {
     const message = snapshot.val();
-    const div = document.createElement("div");
-    div.textContent = `${message.sender === currentUser.uid ? "あなた" : "相手"}: ${message.text}`;
-    messagesDiv.appendChild(div);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    displayMessage(message);
   });
 }
 
-// メッセージを送信する関数
+// --- メッセージ表示 ---
+function displayMessage(message) {
+  const div = document.createElement("div");
+  div.className = "message";
+  if (message.sender === currentUser.uid) div.classList.add("self");
+
+  let content = "";
+  if (message.type === "text") {
+    content = message.text;
+  } else if (message.type === "image") {
+    content = `[画像]`;
+    const img = document.createElement("img");
+    img.src = message.data;
+    img.style.maxWidth = "150px";
+    img.style.display = "block";
+    content = "";
+    div.appendChild(img);
+  } else if (message.type === "audio") {
+    content = `[音声]`;
+    const audio = document.createElement("audio");
+    audio.controls = true;
+    audio.src = message.data;
+    div.appendChild(audio);
+    content = "";
+  } else if (message.type === "video-notify") {
+    content = `[動画通話通知] ${message.text}`;
+  }
+
+  if (content) {
+    div.textContent = `${message.sender === currentUser.uid ? "あなた" : "相手"}: ${content}`;
+  } else {
+    div.textContent = `${message.sender === currentUser.uid ? "あなた" : "相手"}: `;
+  }
+
+  messagesDiv.appendChild(div);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+// --- メッセージ送信 ---
 window.sendMessage = async function(event) {
   event.preventDefault();
   const input = document.getElementById("message-input");
   const text = input.value.trim();
   if (!text || !currentChatId) return;
-
   const messagesRef = ref(db, `chats/${currentChatId}/messages`);
   await push(messagesRef, {
     sender: currentUser.uid,
+    type: "text",
     text: text,
     timestamp: Date.now()
   });
-
   input.value = "";
 };
 
-// 認証状態の監視
-onAuthStateChanged(auth, user => {
-  if (user) {
-    currentUser = user;
-    loadFriendList();
-  } else {
-    // 未ログインの場合、ログインページにリダイレクト
-    window.location.href = "index.html";
+// --- 画像添付処理 ---
+imageInput.addEventListener("change", async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // JPEGに変換・圧縮 (canvas)
+  const compressedDataUrl = await compressImageToJpeg(file, 40 * 1024);
+  if (!compressedDataUrl) {
+    alert("画像の圧縮に失敗しました。");
+    return;
   }
+
+  // メッセージとして送信
+  await sendMediaMessage("image", compressedDataUrl);
+  imageInput.value = "";
 });
+
+// 画像圧縮関数（JPEG変換、40KB以内目標）
+async function compressImageToJpeg(file, maxSize) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        let [width, height] = [img.width, img.height];
+
+        // 最大幅・高さを設定（画質保持のため縮小は必要最低限）
+        const maxDim = 800;
+        if (width > height && width > maxDim) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else if (height > width && height > maxDim) {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // 圧縮率を段階的に下げて40KB以下を目指す
+        let quality = 0.92;
+        function tryCompress() {
+          const dataUrl = canvas.toDataURL("image/jpeg", quality);
+          const base64Length = dataUrl.length - "data:image/jpeg;base64,".length;
+          const sizeInBytes = 4 * Math.ceil(base64Length / 3) * 0.75; // base64 → バイト概算
+          if (sizeInBytes <= maxSize || quality <= 0.4) {
+            resolve(dataUrl);
+          } else {
+            quality -= 0.05;
+            tryCompress();
+          }
+        }
+        tryCompress();
+      };
+      img.onerror = () => reject("画像読み込みエラー");
+      img.src = reader.result;
+    };
+    reader.onerror = () => reject("ファイル読み込みエラー");
+    reader.readAsDataURL(file);
+  });
+}
