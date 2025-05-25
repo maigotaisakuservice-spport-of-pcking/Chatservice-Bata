@@ -5,129 +5,121 @@
   <title>ChatGo - チャット</title>
   <style>
     body {
-      font-family: sans-serif;
       margin: 0;
-      background-color: white;
-      color: black;
-      transition: all 0.3s;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f0f0f0;
     }
-    .dark {
-      background-color: #121212;
-      color: white;
-    }
+
     header {
-      background-color: #4CAF50;
+      background-color: #2e7d32;
       color: white;
-      padding: 1em;
-      text-align: center;
-    }
-    #messages {
-      height: 70vh;
-      overflow-y: scroll;
-      padding: 1em;
-      border-bottom: 1px solid #ccc;
-    }
-    .message {
-      margin: 0.5em 0;
-      padding: 0.5em;
-      border-radius: 0.5em;
-      background: #e0ffe0;
-    }
-    .own {
-      background: #d1f7ff;
-    }
-    #form {
+      padding: 10px 20px;
       display: flex;
-      padding: 1em;
+      justify-content: space-between;
+      align-items: center;
     }
-    #form input {
-      flex: 1;
-      padding: 0.5em;
+
+    .menu-button {
+      font-size: 24px;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
     }
-    #form button {
-      padding: 0.5em 1em;
-      background: #4CAF50;
+
+    .menu {
+      position: absolute;
+      top: 50px;
+      right: 20px;
+      background-color: white;
+      border: 1px solid #ccc;
+      width: 250px;
+      display: none;
+      flex-direction: column;
+      z-index: 1000;
+      padding: 10px;
+    }
+
+    .menu input {
+      width: calc(100% - 20px);
+      margin-bottom: 10px;
+      padding: 5px;
+    }
+
+    .menu button {
+      background-color: #4caf50;
       color: white;
       border: none;
+      padding: 5px;
+      margin-bottom: 5px;
+      cursor: pointer;
     }
-    #toggleMode {
-      position: absolute;
-      right: 1em;
-      top: 1em;
+
+    #chat-area {
+      padding: 20px;
+    }
+
+    .friend-list {
+      margin-top: 10px;
+    }
+
+    .friend-item {
+      cursor: pointer;
+      padding: 4px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .friend-item:hover {
+      background-color: #e0e0e0;
+    }
+
+    #messages {
+      min-height: 300px;
+      max-height: 400px;
+      overflow-y: auto;
+      background: #fff;
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+
+    #message-form {
+      display: flex;
+      margin-top: 10px;
+    }
+
+    #message-input {
+      flex: 1;
+      padding: 8px;
+    }
+
+    #send-button {
+      padding: 8px 16px;
+      background-color: #2e7d32;
+      color: white;
+      border: none;
     }
   </style>
 </head>
 <body>
   <header>
-    ChatGo - チャット
-    <a href="profile.html">プロフィールページへ</a>
-    <button id="toggleMode">切替</button>
+    <h1>ChatGo</h1>
+     <a href="profile.html">プロフィールページへ</a>
+    <button class="menu-button" onclick="toggleMenu()">≡</button>
+    <div class="menu" id="menu">
+      <input type="email" id="friend-email" placeholder="メールで検索">
+      <button onclick="addFriend()">フレンド追加</button>
+      <div class="friend-list" id="friend-list"></div>
+    </div>
   </header>
 
-  <div id="messages"></div>
+  <main id="chat-area">
+    <div id="messages"></div>
+    <form id="message-form" onsubmit="sendMessage(event)">
+      <input type="text" id="message-input" placeholder="メッセージを入力">
+      <button id="send-button">送信</button>
+    </form>
+  </main>
 
-  <form id="form">
-    <input type="text" id="textInput" placeholder="メッセージを入力" required>
-    <button type="submit">送信</button>
-  </form>
-
-  <script type="module">
-    import {
-      auth,
-      db,
-      ref,
-      push,
-      onChildAdded,
-      get,
-      child
-    } from './app.js';
-
-    const user = auth.currentUser;
-    if (!user) window.location.href = 'login.html';
-
-    const messagesRef = ref(db, 'messages/');
-    const form = document.getElementById('form');
-    const input = document.getElementById('textInput');
-    const messagesDiv = document.getElementById('messages');
-    const toggleMode = document.getElementById('toggleMode');
-
-    let currentMode = sessionStorage.getItem('mode') || 'light';
-    if (currentMode === 'dark') document.body.classList.add('dark');
-
-    toggleMode.addEventListener('click', () => {
-      currentMode = (currentMode === 'light') ? 'dark' : 'light';
-      sessionStorage.setItem('mode', currentMode);
-      document.body.classList.toggle('dark');
-    });
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const text = input.value;
-      input.value = '';
-      await push(messagesRef, {
-        uid: auth.currentUser.uid,
-        text,
-        timestamp: Date.now()
-      });
-    });
-
-    onChildAdded(messagesRef, async (data) => {
-      const msg = data.val();
-      const uid = msg.uid;
-      const userSnap = await get(child(ref(db), `users/${uid}`));
-      const userName = userSnap.exists() ? userSnap.val().email : '匿名';
-
-      const div = document.createElement('div');
-      div.className = 'message' + (uid === auth.currentUser.uid ? ' own' : '');
-      div.textContent = `${userName}：${msg.text}`;
-      messagesDiv.appendChild(div);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-
-      // セッションストレージにも保存
-      const existing = JSON.parse(sessionStorage.getItem('chatlog') || '[]');
-      existing.push({ uid, text: msg.text });
-      sessionStorage.setItem('chatlog', JSON.stringify(existing));
-    });
-  </script>
+  <script type="module" src="chat.js"></script>
 </body>
 </html>
