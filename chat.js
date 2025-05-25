@@ -191,7 +191,7 @@ document.getElementById("image-form").addEventListener("submit", async (e) => {
   }
 
   try {
-    const base64 = await compressImageToTargetSize(file,1024); // 30KB以下
+    const base64 = await compressImageToTargetSize(file,30 * 1024); // 30KB以下
     const messagesRef = ref(db, `chats/${currentChatId}/messages`);
     await push(messagesRef, {
       type: "image",
