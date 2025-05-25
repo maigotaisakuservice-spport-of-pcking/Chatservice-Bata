@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ChatGo - プロフィール</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      background-color: white;
+      color: black;
+      transition: 0.3s;
+    }
+    .dark {
+      background-color: #121212;
+      color: white;
+    }
+    header {
+      background-color: #4CAF50;
+      color: white;
+      padding: 1em;
+      text-align: center;
+    }
+    .container {
+      padding: 2em;
+      max-width: 400px;
+      margin: auto;
+    }
+    label {
+      display: block;
+      margin-top: 1em;
+    }
+    input {
+      width: 100%;
+      padding: 0.5em;
+      margin-top: 0.5em;
+    }
+    button {
+      margin-top: 1em;
+      padding: 0.5em 1em;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    #toggleMode {
+      position: absolute;
+      right: 1em;
+      top: 1em;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    ChatGo - プロフィール
+    <button id="toggleMode">切替</button>
+  </header>
+
+  <div class="container">
+    <h2>ようこそ、<span id="userEmail">ユーザー</span>さん</h2>
+    <label for="displayName">表示名:</label>
+    <input type="text" id="displayName" placeholder="表示名を入力">
+    <button id="saveBtn">保存</button>
+    <button id="logoutBtn">ログアウト</button>
+    <a href="chat.html">チャット画面へ戻る</a>
+  </div>
+
+  <script type="module">
+    import { auth, db, ref, onAuthStateChanged, set, get, child } from './app.js';
+
+    const emailSpan = document.getElementById('userEmail');
+    const displayNameInput = document.getElementById('displayName');
+    const saveBtn = document.getElementById('saveBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const toggleMode = document.getElementById('toggleMode');
+
+    let currentMode = sessionStorage.getItem('mode') || 'light';
+    if (currentMode === 'dark') document.body.classList.add('dark');
+
+    toggleMode.addEventListener('click', () => {
+      currentMode = (currentMode === 'light') ? 'dark' : 'light';
+      sessionStorage.setItem('mode', currentMode);
+      document.body.classList.toggle('dark');
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) return window.location.href = 'login.html';
+      emailSpan.textContent = user.email;
+
+      const snap = await get(child(ref(db), `users/${user.uid}`));
+      if (snap.exists()) {
+        const data = snap.val();
+        displayNameInput.value = data.displayName || '';
+      }
+    });
+
+    saveBtn.addEventListener('click', async () => {
+      const name = displayNameInput.value;
+      const uid = auth.currentUser.uid;
+      await set(ref(db, `users/${uid}`), {
+        email: auth.currentUser.email,
+        displayName: name
+      });
+      alert('保存しました');
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      await auth.signOut();
+      sessionStorage.clear();
+      window.location.href = 'login.html';
+    });
+  </script>
+</body>
+</html>
