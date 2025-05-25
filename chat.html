@@ -114,17 +114,10 @@
 
   <main id="chat-area">
     <div id="messages"></div>
-<!-- 画像表示エリア↓　メッセージ表示エリア↑-->
-    <div id="image-messages"></div>
     <form id="message-form" onsubmit="sendMessage(event)">
       <input type="text" id="message-input" placeholder="メッセージを入力">
       <button id="send-button">送信</button>
     </form>
-   <!-- 画像送信用フォーム -->
-<form id="image-form">
-  <input type="file" id="image-input" accept="image/*" />
-  <button type="submit">画像送信</button>
-</form>
   </main>
 
   <script type="module" src="chat.js"></script>
