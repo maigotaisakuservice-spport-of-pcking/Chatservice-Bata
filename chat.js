@@ -179,8 +179,7 @@ onAuthStateChanged(auth, user => {
 });
 
 
-
-// image-formのsubmitイベントで画像送信
+// 画像フォームのsubmitイベントで画像送信
 document.getElementById("image-form").addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -191,7 +190,7 @@ document.getElementById("image-form").addEventListener("submit", async (e) => {
   }
 
   try {
-    const base64 = await compressImageToTargetSize(file,30 * 1024); // 30KB以下
+    const base64 = await compressImageToTargetSize(file, 30 * 1024); // 30KB以下
     const messagesRef = ref(db, `chats/${currentChatId}/messages`);
     await push(messagesRef, {
       type: "image",
@@ -206,9 +205,36 @@ document.getElementById("image-form").addEventListener("submit", async (e) => {
     console.error("送信失敗:", err);
     alert("画像送信に失敗しました。");
   }
-}
-        // 品質を調整しながらbase64サイズが30KB以下になるよう試行
+});
+
+// 圧縮関数（非同期）
+async function compressImageToTargetSize(file, maxBase64Size = 30 * 1024) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        const maxDim = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height && width > maxDim) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else if (height > width && height > maxDim) {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+
         let quality = 0.92;
+
         function tryCompress() {
           const dataUrl = canvas.toDataURL("image/jpeg", quality);
           const base64Length = dataUrl.length - "data:image/jpeg;base64,".length;
@@ -221,15 +247,17 @@ document.getElementById("image-form").addEventListener("submit", async (e) => {
             tryCompress();
           }
         }
+
         tryCompress();
       };
-      img.onerror = () => alert("画像読み込みエラー");
+      img.onerror = () => reject("画像読み込みエラー");
       img.src = reader.result;
     };
-    reader.onerror = () => alert("ファイル読み込みエラー");
+    reader.onerror = () => reject("ファイル読み込みエラー");
     reader.readAsDataURL(file);
   });
 }
+
 
 //chat画面に画像表示スクリプト
 function displayMessage(message) {
