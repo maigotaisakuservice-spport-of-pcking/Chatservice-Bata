@@ -104,11 +104,24 @@
       alert('保存しました');
     });
 
-    logoutBtn.addEventListener('click', async () => {
-      await auth.signOut();
-      sessionStorage.clear();
-      window.location.href = 'login.html';
-    });
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+  import { app } from './firebase.js'; // Firebase初期化済みJS
+
+  const auth = getAuth(app);
+
+  function logout() {
+    signOut(auth)
+      .then(() => {
+        console.log("ログアウト成功");
+        sessionStorage.clear(); // セッション情報削除
+        window.location.href = "login.html";
+      })
+      .catch((error) => {
+        console.error("ログアウト失敗:", error);
+      });
+  }
+
+  window.logout = logout;
   </script>
 </body>
 </html>
