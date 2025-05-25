@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ChatGo - 新規登録</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f1fff5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      flex-direction: column;
+    }
+    form {
+      background: #fff;
+      padding: 2em;
+      border-radius: 1em;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    input, button {
+      display: block;
+      width: 100%;
+      padding: 0.5em;
+      margin-bottom: 1em;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 0.5em;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .google-btn {
+      background-color: #dd4b39;
+    }
+  </style>
+</head>
+<body>
+  <h2>ChatGo 新規登録</h2>
+  <form id="registerForm">
+    <input type="email" id="email" placeholder="メールアドレス" required>
+    <input type="password" id="password" placeholder="パスワード" required>
+    <button type="submit">登録</button>
+  </form>
+
+  <button class="google-btn" id="googleSignUp">Googleで登録</button>
+
+  <script type="module">
+    import {
+      auth,
+      db,
+      createUserWithEmailAndPassword,
+      GoogleAuthProvider,
+      signInWithPopup,
+      ref,
+      set
+    } from './app.js';
+
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        await set(ref(db, 'users/' + user.uid), {
+          email: user.email,
+          createdAt: new Date().toISOString()
+        });
+        alert("登録完了！");
+        window.location.href = "chat.html";
+      } catch (error) {
+        alert("登録エラー：" + error.message);
+      }
+    });
+
+    document.getElementById('googleSignUp').addEventListener('click', async () => {
+      const provider = new GoogleAuthProvider();
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        await set(ref(db, 'users/' + user.uid), {
+          email: user.email,
+          createdAt: new Date().toISOString(),
+          provider: 'google'
+        });
+        alert("Googleで登録完了！");
+        window.location.href = "chat.html";
+      } catch (error) {
+        alert("Google登録エラー：" + error.message);
+      }
+    });
+  </script>
+</body>
+</html>
