@@ -206,7 +206,30 @@ document.getElementById("image-form").addEventListener("submit", async (e) => {
     console.error("送信失敗:", err);
     alert("画像送信に失敗しました。");
   }
-});
+}
+        // 品質を調整しながらbase64サイズが30KB以下になるよう試行
+        let quality = 0.92;
+        function tryCompress() {
+          const dataUrl = canvas.toDataURL("image/jpeg", quality);
+          const base64Length = dataUrl.length - "data:image/jpeg;base64,".length;
+          const sizeInBytes = 4 * Math.ceil(base64Length / 3) * 0.75;
+
+          if (sizeInBytes <= maxBase64Size || quality <= 0.4) {
+            resolve(dataUrl);
+          } else {
+            quality -= 0.05;
+            tryCompress();
+          }
+        }
+        tryCompress();
+      };
+      img.onerror = () => alert("画像読み込みエラー");
+      img.src = reader.result;
+    };
+    reader.onerror = () => alert("ファイル読み込みエラー");
+    reader.readAsDataURL(file);
+  });
+}
 
 //chat画面に画像表示スクリプト
 function displayMessage(message) {
