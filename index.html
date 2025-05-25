@@ -74,31 +74,6 @@
         alert("ログイン失敗：" + error.message);
       }
     });
-
-  import {
-  getAuth,
-  signInWithPopup,
-  GoogleAuthProvider
-} from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-
-const auth = getAuth();
-const provider = new GoogleAuthProvider();
-
-document.getElementById("google-signin-btn").addEventListener("click", () => {
-  signInWithPopup(auth, provider)
-    .then((result) => {
-      // ユーザー情報取得
-      const user = result.user;
-      // 任意でユーザー情報をRealtime Databaseに保存
-      // 例：users/UIDに保存
-      console.log("Googleサインイン成功:", user);
-      window.location.href = "chat.html";
-    })
-    .catch((error) => {
-      console.error("Googleサインインエラー:", error);
-      alert("Googleサインインに失敗しました。");
-    });
-});
   </script>
 </body>
 </html>
