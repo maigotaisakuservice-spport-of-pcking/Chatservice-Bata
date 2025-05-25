@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>パスワードリセット - ChatGo</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #e0f2e9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      flex-direction: column;
+    }
+    form {
+      background: #fff;
+      padding: 2em;
+      border-radius: 1em;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    input, button {
+      display: block;
+      width: 100%;
+      padding: 0.5em;
+      margin-bottom: 1em;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 0.5em;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h2>パスワードリセット</h2>
+  <form id="resetForm">
+    <input type="email" id="resetEmail" placeholder="メールアドレス" required>
+    <button type="submit">リセットリンク送信</button>
+  </form>
+
+  <script type="module">
+    import { auth, sendPasswordResetEmail } from "./app.js";
+
+    document.getElementById('resetForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('resetEmail').value;
+
+      try {
+        await sendPasswordResetEmail(auth, email);
+        alert("リセットリンクを送信しました。メールを確認してください。");
+      } catch (error) {
+        alert("送信エラー：" + error.message);
+      }
+    });
+  </script>
+</body>
+</html>
