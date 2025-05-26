@@ -180,7 +180,134 @@ onAuthStateChanged(auth, user => {
 
 
 
-//画像ファイル送信&圧縮スクリプト
+
+
+//画像、動画(リンク生成)ファイル送信&圧縮スクリプト
+// 画像フォームのsubmitイベントで画像送信
+document.getElementById("image-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const file = document.getElementById("image-input").files[0];
+  if (!file || !currentChatId || !currentUser) {
+    alert("画像かチャット対象が見つかりません");
+    return;
+  }
+
+  try {
+    const base64 = await compressImageToTargetSize(file, 30 * 1024); // 30KB以下
+    const messagesRef = ref(db, `chats/${currentChatId}/messages`);
+    await push(messagesRef, {
+      type: "image",
+      imageDataUrl: base64,
+      sender: currentUser.uid,
+      timestamp: Date.now()
+    });
+
+    alert("画像を送信しました！");
+    document.getElementById("image-input").value = "";
+  } catch (err) {
+    console.error("送信失敗:", err);
+    alert("画像送信に失敗しました。");
+  }
+});
+
+// 圧縮関数（非同期）
+async function compressImageToTargetSize(file, maxBase64Size = 30 * 1024) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        const maxDim = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height && width > maxDim) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else if (height > width && height > maxDim) {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        let quality = 0.92;
+
+        function tryCompress() {
+          const dataUrl = canvas.toDataURL("image/jpeg", quality);
+          const base64Length = dataUrl.length - "data:image/jpeg;base64,".length;
+          const sizeInBytes = 4 * Math.ceil(base64Length / 3) * 0.75;
+
+          if (sizeInBytes <= maxBase64Size || quality <= 0.4) {
+            resolve(dataUrl);
+          } else {
+            quality -= 0.05;
+            tryCompress();
+          }
+        }
+
+        tryCompress();
+      };
+      img.onerror = () => reject("画像読み込みエラー");
+      img.src = reader.result;
+    };
+    reader.onerror = () => reject("ファイル読み込みエラー");
+    reader.readAsDataURL(file);
+  });
+}
+
+
+
+// Cloudinaryの設定（あなたのCloud name と preset を必ず置き換えてください）
+const cloudName = "dvip3spmr"; // 例: "chatgo123"
+const uploadPreset = "ChatGoVideoPost"; // unsigned upload preset
+
+// video-form の submit イベント処理
+document.getElementById("video-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const file = document.getElementById("video-input").files[0];
+  if (!file || !currentChatId || !currentUser) {
+    alert("動画またはチャット対象が見つかりません");
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", uploadPreset);
+
+    // Cloudinary にアップロード
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await res.json();
+    const videoUrl = data.secure_url;
+
+    // Firebase Realtime Database に動画URLを送信
+    const messagesRef = ref(db, `chats/${currentChatId}/messages`);
+    await push(messagesRef, {
+      type: "video",
+      videoUrl: videoUrl,
+      sender: currentUser.uid,
+      timestamp: Date.now()
+    });
+
+    alert("動画を送信しました！");
+    document.getElementById("video-input").value = "";
+  } catch (error) {
+    console.error("動画送信エラー:", error);
+    alert("動画のアップロードに失敗しました");
+  }
+});
+
 //chat画面に画像を表示するスクリプト 
 //調整中のため退避ファイルに保存中
-
