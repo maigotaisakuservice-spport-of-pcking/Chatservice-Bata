@@ -309,5 +309,5 @@ document.getElementById("video-form").addEventListener("submit", async (e) => {
   }
 });
 
-//chat画面に画像を表示するスクリプト 
+//chat画面に画像と動画を表示するスクリプト 
 //調整中のため退避ファイルに保存中
