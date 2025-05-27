@@ -316,35 +316,12 @@ function displayMessage(message) {
   const messagesDiv = document.getElementById("messages");
   const div = document.createElement("div");
 
-  console.log("受信:", message); // デバッグ用
+  console.log("受信:", message); // 確認用
 
-  if (message.type === "video" && message.videoUrl) {
-    const label = document.createElement("span");
-    label.textContent = (message.sender === currentUser?.uid) ? "あなた: " : "相手: ";
-    div.appendChild(label);
-
-    const link = document.createElement("a");
-    link.href = message.videoUrl;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    link.textContent = "動画を見る";
-    link.style.color = "#4caf50";
-    link.style.marginLeft = "5px";
-
-    div.appendChild(link);
-  } else if (message.type === "image" && message.imageDataUrl) {
-    const img = document.createElement("img");
-    img.src = message.imageDataUrl;
-    img.loading = "lazy";
-    img.alt = "画像メッセージ";
-    img.style.maxWidth = "150px";
-    img.style.maxHeight = "150px";
-    img.style.cursor = "pointer";
-    img.onclick = () => openImageModal(message.imageDataUrl);
-    div.appendChild(img);
-  } else {
-    div.textContent = `${message.sender === currentUser?.uid ? "あなた" : "相手"}: ${message.text || "[メッセージなし]"}`;
-  }
+  // すべてのメッセージで URL を表示するテスト
+  const pre = document.createElement("pre");
+  pre.textContent = JSON.stringify(message, null, 2); // メッセージ丸ごと表示
+  div.appendChild(pre);
 
   messagesDiv.appendChild(div);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
