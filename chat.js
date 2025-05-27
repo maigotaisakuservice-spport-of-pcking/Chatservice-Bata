@@ -309,5 +309,28 @@ document.getElementById("video-form").addEventListener("submit", async (e) => {
   }
 });
 
-//chat画面に画像と動画を表示するスクリプト 
+//chat画面に画像を表示するスクリプト 
 //調整中のため退避ファイルに保存中
+
+function displayMessage(message) {
+  const messagesDiv = document.getElementById("messages");
+  const div = document.createElement("div");
+
+if (message.type === "video" && message.videoUrl) {
+    // 動画のURLをaタグで表示
+    const link = document.createElement("a");
+    link.href = message.videoUrl;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "動画を見る";
+    link.style.display = "inline-block";
+    link.style.color = "#4caf50"; // アクセントグリーン
+    link.style.marginTop = "5px";
+    div.appendChild(link);
+  } else {
+    div.textContent = `${message.sender === currentUser.uid ? "あなた" : "相手"}: ${message.text || ""}`;
+  }
+
+  messagesDiv.appendChild(div);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
