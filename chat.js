@@ -313,24 +313,37 @@ document.getElementById("video-form").addEventListener("submit", async (e) => {
 //調整中のため退避ファイルに保存中
 
 function displayMessage(message) {
-  console.log("受信メッセージ:", message); // ← 確認用に必ず表示
-
   const messagesDiv = document.getElementById("messages");
   const div = document.createElement("div");
 
-  // 安全にtypeを小文字化して比較
-  const messageType = (message.type || "").toLowerCase();
+  console.log("受信:", message); // デバッグ用
 
-  if (messageType === "video" && message.videoUrl) {
+  if (message.type === "video" && message.videoUrl) {
+    const label = document.createElement("span");
+    label.textContent = (message.sender === currentUser?.uid) ? "あなた: " : "相手: ";
+    div.appendChild(label);
+
     const link = document.createElement("a");
     link.href = message.videoUrl;
     link.target = "_blank";
     link.rel = "noopener noreferrer";
     link.textContent = "動画を見る";
     link.style.color = "#4caf50";
+    link.style.marginLeft = "5px";
+
     div.appendChild(link);
+  } else if (message.type === "image" && message.imageDataUrl) {
+    const img = document.createElement("img");
+    img.src = message.imageDataUrl;
+    img.loading = "lazy";
+    img.alt = "画像メッセージ";
+    img.style.maxWidth = "150px";
+    img.style.maxHeight = "150px";
+    img.style.cursor = "pointer";
+    img.onclick = () => openImageModal(message.imageDataUrl);
+    div.appendChild(img);
   } else {
-    div.textContent = `${message.sender === currentUser.uid ? "あなた" : "相手"}: ${message.text || ""}`;
+    div.textContent = `${message.sender === currentUser?.uid ? "あなた" : "相手"}: ${message.text || "[メッセージなし]"}`;
   }
 
   messagesDiv.appendChild(div);
