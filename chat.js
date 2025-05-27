@@ -313,19 +313,21 @@ document.getElementById("video-form").addEventListener("submit", async (e) => {
 //調整中のため退避ファイルに保存中
 
 function displayMessage(message) {
+  console.log("受信メッセージ:", message); // ← 確認用に必ず表示
+
   const messagesDiv = document.getElementById("messages");
   const div = document.createElement("div");
 
-if (message.type === "video" && message.videoUrl) {
-    // 動画のURLをaタグで表示
+  // 安全にtypeを小文字化して比較
+  const messageType = (message.type || "").toLowerCase();
+
+  if (messageType === "video" && message.videoUrl) {
     const link = document.createElement("a");
     link.href = message.videoUrl;
     link.target = "_blank";
     link.rel = "noopener noreferrer";
     link.textContent = "動画を見る";
-    link.style.display = "inline-block";
-    link.style.color = "#4caf50"; // アクセントグリーン
-    link.style.marginTop = "5px";
+    link.style.color = "#4caf50";
     div.appendChild(link);
   } else {
     div.textContent = `${message.sender === currentUser.uid ? "あなた" : "相手"}: ${message.text || ""}`;
