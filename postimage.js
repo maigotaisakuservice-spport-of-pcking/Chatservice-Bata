@@ -38,3 +38,4 @@ document.getElementById("image-form").addEventListener("submit", async (e) => {
     alert("画像送信に失敗しました");
   }
 });
+
