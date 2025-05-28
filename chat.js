@@ -179,46 +179,7 @@ onAuthStateChanged(auth, user => {
 });
 
 
-//画像送信スクリプト Cloudinary処理
-document.getElementById("image-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
 
-  const file = document.getElementById("image-input").files[0];
-  if (!file || !currentChatId || !currentUser) {
-    alert("画像またはチャット情報がありません");
-    return;
-  }
-
-  try {
-    // Cloudinary へのアップロード
-    const formData = new FormData();
-    formDatas.append("file", file);
-    formDatas.append("upload_preset", "ChatGoImage"); // ←あなたのCloudinary設定に置き換え
-
-    const response = await fetch("https://api.cloudinary.com/v1_1/dvip3spmr/image/upload", {
-      method: "POST",
-      body: formDatas
-    });
-
-    const data = await response.json();
-    const imageUrl = data.secure_url;
-
-    // Firebase RealtimeDB に画像URLを保存
-    const messagesRef = ref(db, `chats/${currentChatId}/messages`);
-    await push(messagesRef, {
-      text: imageUrl,
-      sender: currentUser.uid,
-      timestamp: Date.now()
-    });
-
-    alert("画像を送信しました！");
-    document.getElementById("image-input").value = "";
-
-  } catch (err) {
-    console.error("送信エラー:", err);
-    alert("画像送信に失敗しました");
-  }
-});
 
 
 // Cloudinaryの設定（あなたのCloud name と preset を必ず置き換えてください）
@@ -264,21 +225,3 @@ document.getElementById("video-form").addEventListener("submit", async (e) => {
     alert("動画のアップロードに失敗しました");
   }
 });
-
-//chat画面に画像を表示するスクリプト 
-//調整中のため退避ファイルに保存中
-
-function displayMessage(message) {
-  const messagesDiv = document.getElementById("messages");
-  const div = document.createElement("div");
-
-  console.log("受信:", message); // 確認用
-
-  // すべてのメッセージで URL を表示するテスト
-  const pre = document.createElement("pre");
-  pre.textContent = JSON.stringify(message, null, 2); // メッセージ丸ごと表示
-  div.appendChild(pre);
-
-  messagesDiv.appendChild(div);
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
-}
