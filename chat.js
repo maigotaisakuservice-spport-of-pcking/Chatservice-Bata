@@ -295,8 +295,7 @@ document.getElementById("video-form").addEventListener("submit", async (e) => {
     // Firebase Realtime Database に動画URLを送信
     const messagesRef = ref(db, `chats/${currentChatId}/messages`);
     await push(messagesRef, {
-      type: "video",
-      videoUrl: videoUrl,
+      text: videoUrl,
       sender: currentUser.uid,
       timestamp: Date.now()
     });
