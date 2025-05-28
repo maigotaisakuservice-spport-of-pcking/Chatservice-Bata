@@ -193,7 +193,7 @@ document.getElementById("image-form").addEventListener("submit", async (e) => {
     // Cloudinary へのアップロード
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", "ChatGoVideoPost"); // ←あなたのCloudinary設定に置き換え
+    formData.append("upload_preset", "ChatGoImage"); // ←あなたのCloudinary設定に置き換え
 
     const response = await fetch("https://api.cloudinary.com/v1_1/dvip3spmr/image/upload", {
       method: "POST",
