@@ -192,12 +192,12 @@ document.getElementById("image-form").addEventListener("submit", async (e) => {
   try {
     // Cloudinary へのアップロード
     const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "ChatGoImage"); // ←あなたのCloudinary設定に置き換え
+    formDatas.append("file", file);
+    formDatas.append("upload_preset", "ChatGoImage"); // ←あなたのCloudinary設定に置き換え
 
     const response = await fetch("https://api.cloudinary.com/v1_1/dvip3spmr/image/upload", {
       method: "POST",
-      body: formData
+      body: formDatas
     });
 
     const data = await response.json();
@@ -206,8 +206,7 @@ document.getElementById("image-form").addEventListener("submit", async (e) => {
     // Firebase RealtimeDB に画像URLを保存
     const messagesRef = ref(db, `chats/${currentChatId}/messages`);
     await push(messagesRef, {
-      type: "image",
-      imageUrl,
+      text: imageUrl,
       sender: currentUser.uid,
       timestamp: Date.now()
     });
