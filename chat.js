@@ -1,21 +1,9 @@
 // chat.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-import {
-  getAuth,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-import {
-  getDatabase,
-  ref,
-  set,
-  push,
-  onChildAdded,
-  get,
-  child,
-  update
-} from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+import { getDatabase, ref, push, get, update } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
 
-// Firebase の設定
+// Firebaseの設定
 const firebaseConfig = {
   apiKey: "AIzaSyA7CWUhLBKG_Oabxxw_7RfBpSANUoDh42s",
   authDomain: "moodmirror-login.firebaseapp.com",
@@ -27,7 +15,7 @@ const firebaseConfig = {
   measurementId: "G-TPJXPMPSGZ"
 };
 
-// Firebase の初期化
+// Firebaseの初期化
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
@@ -178,10 +166,6 @@ onAuthStateChanged(auth, user => {
   }
 });
 
-
-
-
-
 // Cloudinaryの設定（あなたのCloud name と preset を必ず置き換えてください）
 const cloudName = "dvip3spmr"; // 例: "chatgo123"
 const uploadPreset = "ChatGoVideoPost"; // unsigned upload preset
@@ -226,8 +210,6 @@ document.getElementById("video-form").addEventListener("submit", async (e) => {
   }
 });
 
-
-
 //画像送信スクリプト Cloudinary処理
 document.getElementById("image-form").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -241,12 +223,12 @@ document.getElementById("image-form").addEventListener("submit", async (e) => {
   try {
     // Cloudinary へのアップロード
     const formData = new FormData();
-    formDatas.append("file", file);
-    formDatas.append("upload_preset", "ChatGoImage"); // ←あなたのCloudinary設定に置き換え
+    formData.append("file", file);
+    formData.append("upload_preset", "ChatGoImage"); // ←あなたのCloudinary設定に置き換え
 
     const response = await fetch("https://api.cloudinary.com/v1_1/dvip3spmr/image/upload", {
       method: "POST",
-      body: formDatas
+      body: formData
     });
 
     const data = await response.json();
@@ -268,4 +250,3 @@ document.getElementById("image-form").addEventListener("submit", async (e) => {
     alert("画像送信に失敗しました");
   }
 });
-
