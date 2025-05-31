@@ -1,0 +1,32 @@
+name: Update Server Status
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # 毎5分ごとに更新（UTC）
+  workflow_dispatch:       # 手動実行も可能
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: データチェックアウト
+        uses: actions/checkout@v3
+
+      - name: CPU使用率取得
+        run: |
+          mkdir -p status
+          CPU=$(top -bn1 | grep "Cpu(s)" | awk '{print $2 + $4}')
+          echo '{
+            "Rack 1": [{"name": "Server A", "cpu": "'$CPU'%", "status": "ON"}],
+            "Rack 2": [],
+            "Rack 3": [],
+            "Rack 4": []
+          }' > status/status.json
+
+      - name: コミット & プッシュ
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add status/status.json
+          git commit -m "Update status.json" || echo "No changes"
+          git push
