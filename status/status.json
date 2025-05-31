@@ -1,0 +1,6 @@
+{
+  "Rack 1": [{"name": "Server A", "cpu": "2.3%", "status": "ON"}],
+  "Rack 2": [],
+  "Rack 3": [],
+  "Rack 4": []
+}
