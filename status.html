@@ -156,7 +156,7 @@
     const workingSound = document.getElementById("working-sound");
 
     async function fetchStatus() {
-      const res = await fetch("https://chatmaga.f5.si/status/status.json");
+      const res = await fetch("/status/status.json");
       return await res.json();
     }
 
@@ -172,9 +172,9 @@
       if (server.status === "OFF") div.classList.add("off");
 
       const cpu = parseFloat(server.cpu);
-      const temp = parseFloat(server.temp || 80);
+      const temp = parseFloat(server.temp || 32);
 
-      if (server.status === "ON" && cpu > 85) {
+      if (server.status === "ON" && cpu > 80) {
         div.classList.add("warning");
       }
 
