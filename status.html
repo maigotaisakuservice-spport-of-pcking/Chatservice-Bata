@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>仮想データセンター</title>
+  <style>
+    body {
+      margin: 0;
+      background: #e5f2fb;
+      font-family: 'Segoe UI', sans-serif;
+      overflow-x: hidden;
+    }
+    h1 {
+      text-align: center;
+      margin-top: 1rem;
+    }
+    #data-center {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      padding: 2rem;
+    }
+    .rack {
+      background: linear-gradient(to bottom, #bbb, #ddd);
+      border: 3px solid #666;
+      border-radius: 10px;
+      width: 200px;
+      height: 300px;
+      margin: 1rem;
+      padding: 1rem;
+      box-shadow: 5px 5px 15px rgba(0,0,0,0.3);
+      transform: perspective(800px) rotateX(5deg) rotateY(-5deg);
+      position: relative;
+    }
+    .server {
+      background: #444;
+      margin: 8px 0;
+      height: 30px;
+      border-radius: 5px;
+      position: relative;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 10px;
+      font-size: 0.85rem;
+      transition: 0.3s ease;
+    }
+    .server.on { background: #2ecc71; }
+    .server.off { background: #888; }
+    .server.warning {
+      background: #e74c3c;
+      animation: blink 1s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    .status {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+    #warning-message {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #e74c3c;
+      color: white;
+      padding: 10px 20px;
+      font-weight: bold;
+      border-radius: 5px;
+      display: none;
+      z-index: 1000;
+      box-shadow: 0 0 15px red;
+    }
+  </style>
+</head>
+<body>
+  <h1>仮想データセンター（chatmaga.f5.si）</h1>
+  <div id="warning-message">⚠️ 高負荷のサーバーを検出しました！</div>
+  <div id="data-center"></div>
+
+  <!-- 音声ファイル（MP3はCCライセンスの無料素材を使ってください） -->
+  <audio id="server-sound" loop>
+    <source src="https://cdn.pixabay.com/download/audio/2023/03/06/audio_e03026dd35.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="warning-sound">
+    <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_53c0bc53a5.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    async function fetchStatus() {
+      const response = await fetch('https://chatmaga.f5.si/status/status.json');
+      if (!response.ok) {
+        console.error("読み込みエラー");
+        return;
+      }
+      const data = await response.json();
+      return data;
+    }
+
+    function createRack(name, servers) {
+      const rack = document.createElement('div');
+      rack.className = 'rack';
+      const title = document.createElement('h3');
+      title.textContent = name;
+      title.style.textAlign = 'center';
+      rack.appendChild(title);
+
+      let hasWarning = false;
+
+      servers.forEach(server => {
+        const s = document.createElement('div');
+        s.className = 'server';
+        s.textContent = `${server.name} - ${server.cpu}`;
+
+        const cpu = parseFloat(server.cpu);
+        if (server.status === "ON") {
+          if (cpu > 85) {
+            s.classList.add('warning');
+            hasWarning = true;
+          } else {
+            s.classList.add('on');
+          }
+        } else {
+          s.classList.add('off');
+        }
+
+        rack.appendChild(s);
+      });
+
+      return { rack, hasWarning };
+    }
+
+    async function renderDataCenter() {
+      const data = await fetchStatus();
+      const container = document.getElementById('data-center');
+      const serverSound = document.getElementById('server-sound');
+      const warningSound = document.getElementById('warning-sound');
+      const warningMsg = document.getElementById('warning-message');
+
+      container.innerHTML = '';
+      let warningDetected = false;
+
+      for (const [rackName, servers] of Object.entries(data)) {
+        const { rack, hasWarning } = createRack(rackName, servers);
+        if (hasWarning) warningDetected = true;
+        container.appendChild(rack);
+      }
+
+      // 音声制御（ユーザー操作後のみ有効）
+      try {
+        if (warningDetected) {
+          warningMsg.style.display = 'block';
+          warningSound.play();
+        } else {
+          warningMsg.style.display = 'none';
+          warningSound.pause();
+          warningSound.currentTime = 0;
+        }
+
+        if (Object.values(data).flat().some(s => s.status === "ON")) {
+          serverSound.play();
+        } else {
+          serverSound.pause();
+          serverSound.currentTime = 0;
+        }
+      } catch (e) {
+        console.warn("音声再生はユーザー操作後に必要です。");
+      }
+    }
+
+    renderDataCenter();
+    setInterval(renderDataCenter, 10000); // 10秒ごとに更新
+  </script>
+</body>
+</html>
