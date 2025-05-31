@@ -20,7 +20,7 @@ jobs:
           echo '{
             "Rack 1": [{"name": "メインサーバー", "cpu": "'$CPU'%", "status": "ON"}],
             "Rack 2": [{"name": "データサーバー", "cpu": "'$CPU'%", "status": "ON"}],
-            "Rack 3": [{"name": "稼働準備中", "cpu": "92%", "status": "OFF"}],
+            "Rack 3": [{"name": "稼働準備中", "cpu": "0%", "status": "OFF"}],
             "Rack 4": [{"name": "稼働予定無し", "cpu": "0%", "status": "OFF"}]
           }' > status/status.json
 
