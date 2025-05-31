@@ -18,10 +18,10 @@ jobs:
           mkdir -p status
           CPU=$(top -bn1 | grep "Cpu(s)" | awk '{print 100 - $8}')
           echo '{
-            "Rack 1": [{"name": "Server A", "cpu": "'$CPU'%", "status": "ON"}],
-            "Rack 2": [],
-            "Rack 3": [],
-            "Rack 4": []
+            "Rack 1": [{"name": "メインサーバー", "cpu": "'$CPU'%", "status": "ON"}],
+            "Rack 2": [{"name": "データサーバー", "cpu": "'$CPU'%", "status": "ON"}],
+            "Rack 3": [{"name": "稼働準備中", "cpu": "0%", "status": "OFF"}],
+            "Rack 4": [{"name": "稼働予定無し", "cpu": "NaN", "status": "OFF"}]
           }' > status/status.json
 
       - name: Git 設定とPush
