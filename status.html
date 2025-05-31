@@ -172,7 +172,7 @@
       if (server.status === "OFF") div.classList.add("off");
 
       const cpu = parseFloat(server.cpu);
-      const temp = parseFloat(server.temp || 50);
+      const temp = parseFloat(server.temp || 80);
 
       if (server.status === "ON" && cpu > 85) {
         div.classList.add("warning");
