@@ -1,6 +1,6 @@
 {
-  "Rack 1": [{"name": "メインサーバー", "cpu": "7.1%", "status": "ON"}],
-  "Rack 2": [{"name": "データサーバー", "cpu": "7.1%", "status": "ON"}],
+  "Rack 1": [{"name": "メインサーバー", "cpu": "2.3%", "status": "ON"}],
+  "Rack 2": [{"name": "データサーバー", "cpu": "2.3%", "status": "ON"}],
   "Rack 3": [{"name": "稼働準備中", "cpu": "0%", "status": "OFF"}],
   "Rack 4": [{"name": "稼働予定無し", "cpu": "0%", "status": "OFF"}]
 }
