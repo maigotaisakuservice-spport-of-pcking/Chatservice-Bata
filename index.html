@@ -74,6 +74,47 @@
         alert("ログイン失敗：" + error.message);
       }
     });
+
+// Firebase 初期化（firebaseConfigは環境に合わせて設定）
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+
+// Firebase設定
+const firebaseConfig = {
+  apiKey: "AIzaSyA7CWUhLBKG_Oabxxw_7RfBpSANUoDh42s",
+  authDomain: "moodmirror-login.firebaseapp.com",
+  projectId: "moodmirror-login",
+  storageBucket: "moodmirror-login.appspot.com",
+  messagingSenderId: "1091670187554",
+  appId: "1:1091670187554:web:ce919c1fca5b660995b47b",
+  measurementId: "G-TPJXPMPSGZ"
+};
+
+// 初期化
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+// Google認証プロバイダ
+const provider = new GoogleAuthProvider();
+
+// Google ログイン処理
+document.getElementById("google-login-btn").addEventListener("click", async () => {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    // ログイン後、メール認証の確認
+    if (user.emailVerified) {
+      alert("ログイン成功!");
+      window.location.href = "chat.html"; // チャット画面へ遷移
+    } else {
+      alert("メール認証が完了していません。");
+    }
+  } catch (error) {
+    console.error("ログインエラー:", error);
+    alert("ログインに失敗しました。");
+  }
+});
   </script>
 </body>
 </html>
