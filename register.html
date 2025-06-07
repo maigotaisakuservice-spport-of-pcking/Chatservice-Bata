@@ -75,14 +75,6 @@
 
       // メール認証を送信
       await sendEmailVerification(user);
-
-      // Realtime Database にユーザー情報保存
-      await set(ref(db, 'users/' + user.uid), {
-        email: user.email,
-        createdAt: new Date().toISOString(),
-        provider: 'email'
-      });
-
       alert("登録完了！認証メールを確認してください。");
       window.location.href = "index.html"; // ログイン画面へ遷移
     } catch (error) {
