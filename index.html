@@ -98,7 +98,7 @@ const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
 // Google ログイン処理
-document.getElementById("google-login-btn").addEventListener("click", async () => {
+document.getElementById("googleLogin").addEventListener("click", async () => {
   try {
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
