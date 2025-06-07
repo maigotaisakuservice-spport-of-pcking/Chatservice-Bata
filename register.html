@@ -51,57 +51,53 @@
 
   <button class="google-btn" id="googleSignUp">Googleで登録</button>
 
-  <script type="module">
-  import {
-    auth,
-    db,
-    createUserWithEmailAndPassword,
-    GoogleAuthProvider,
-    signInWithPopup,
-    ref,
-    set,
-    sendEmailVerification
-  } from './app.js';
-
-  // 通常のメール＋パスワード登録
-  document.getElementById('registerForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      // メール認証を送信
-      await sendEmailVerification(user);
-      alert("登録完了！認証メールを確認してください。");
-      window.location.href = "index.html"; // ログイン画面へ遷移
-    } catch (error) {
-      alert("登録エラー：" + error.message);
-    }
-  });
-
-  // Google サインアップ
-  document.getElementById('googleSignUp').addEventListener('click', async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-
-      await set(ref(db, 'users/' + user.uid), {
-        email: user.email,
-        createdAt: new Date().toISOString(),
-        provider: 'google'
-      });
-
-      alert("Googleで登録完了！");
-      window.location.href = "chat.html";
-    } catch (error) {
-      alert("Google登録エラー：" + error.message);
-    }
-  });
-</script>
+<script type="module">  
+    import {  
+      auth,  
+      db,  
+      createUserWithEmailAndPassword,  
+      GoogleAuthProvider,  
+      signInWithPopup,  
+      ref,  
+      set  
+    } from './app.js';  
+  
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {  
+      e.preventDefault();  
+      const email = document.getElementById('email').value;  
+      const password = document.getElementById('password').value;  
+  
+      try {  
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);  
+        const user = userCredential.user;  
+        await set(ref(db, 'users/' + user.uid), {  
+          email: user.email,  
+          createdAt: new Date().toISOString()  
+        });  
+        alert("登録完了！");  
+        window.location.href = "chat.html";  
+      } catch (error) {  
+        alert("登録エラー：" + error.message);  
+      }  
+    });  
+  
+    document.getElementById('googleSignUp').addEventListener('click', async () => {  
+      const provider = new GoogleAuthProvider();  
+      try {  
+        const result = await signInWithPopup(auth, provider);  
+        const user = result.user;  
+        await set(ref(db, 'users/' + user.uid), {  
+          email: user.email,  
+          createdAt: new Date().toISOString(),  
+          provider: 'google'  
+        });  
+        alert("Googleで登録完了！");  
+        window.location.href = "chat.html";  
+      } catch (error) {  
+        alert("Google登録エラー：" + error.message);  
+      }  
+    });  
+  </script>
 
 </body>
 </html>
