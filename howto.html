@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ChatGo の使い方</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background: #f9f9f9;
+      color: #333;
+    }
+    h1 {
+      color: #4caf50;
+    }
+    section {
+      margin-bottom: 30px;
+    }
+    code {
+      background: #eee;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+    .highlight {
+      background: #e8f5e9;
+      padding: 10px;
+      border-left: 5px solid #4caf50;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>ChatGo の使い方</h1>
+
+  <section>
+    <h2>1. アカウント作成とログイン</h2>
+    <ul>
+      <li>ChatGoを利用するには、<strong>メールアドレスとパスワードでアカウントを作成</strong>する必要があります。</li>
+      <li>または、<strong>Googleアカウントでサインイン</strong>も可能です。</li>
+      <li>ログイン後、自動的にチャット画面に移動します。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>2. フレンドの追加</h2>
+    <ul>
+      <li>チャット画面右上の <strong>三本線（メニュー）ボタン</strong> をクリック</li>
+      <li>メールアドレスを入力し、「フレンド追加」ボタンを押すとフレンドに登録されます。</li>
+      <li>登録したフレンドはリストに表示され、クリックでチャットが開始されます。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3. メッセージを送信</h2>
+    <ul>
+      <li>下部の入力欄にメッセージを入力し、<code>送信</code> ボタンを押します。</li>
+      <li>メッセージはリアルタイムで相手に届きます。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>4. 画像を送信</h2>
+    <ul>
+      <li>「画像を送信」フォームから画像ファイルを選択し、送信。</li>
+      <li>画像は自動的に <strong>Cloudinary</strong> にアップロードされ、URLとして保存されます。</li>
+      <li>受信側では画像がインラインで表示されます。</li>
+      <div class="highlight">
+        ⚠️ 画像は3週間後に自動的に削除されます。大切な画像は保存しておきましょう。
+      </div>
+    </ul>
+  </section>
+
+  <section>
+    <h2>5. 動画を送信</h2>
+    <ul>
+      <li>対応している形式（例: MP4）を選択してください。</li>
+      <li>動画は Cloudinary にアップロードされ、URLがチャットに表示されます。</li>
+      <li>URLをクリックすると、動画が新しいタブで再生されます。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>6. ログアウト</h2>
+    <ul>
+      <li>チャット画面右上のメニューから「ログアウト」を選択します。(現在調整中です)</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>7. よくある質問</h2>
+    <ul>
+      <li><strong>Q: フレンドの表示名がメールアドレス？</strong><br>
+        A: はい。今後アップデートでニックネーム設定も可能になります。</li>
+      <li><strong>Q: 画像が表示されない？</strong><br>
+        A: 通信環境またはCloudinaryの設定ミスが原因です。管理者にお問い合わせください。</li>
+    </ul>
+  </section>
+
+  <hr>
+  <p style="font-size: 0.9em;">このアプリは Firebase と Cloudinary を使用しています。</p>
+</body>
+</html>
