@@ -1,0 +1,17 @@
+<!DOCTYPE html><html lang="ja">
+<head><meta charset="UTF-8"><title>ChatGo グループ通話</title>
+<style>
+  body { font-family:sans-serif; display:flex; flex-direction:column; align-items:center; padding:10px; }
+  #videos { display:flex; flex-wrap:wrap; gap:10px; }
+  video { width:200px; background:black; border-radius:5px; }
+</style>
+</head>
+<body>
+  <h1>グループ通話</h1>
+  <div id="videos"><video id="localVideo" autoplay muted playsinline></video></div>
+  <div id="controls">
+    <button id="muteBtn">ミュート</button>
+    <button id="leaveCallBtn">通話終了</button>
+  </div>
+  <script type="module" src="groupCall.js"></script>
+</body></html>
