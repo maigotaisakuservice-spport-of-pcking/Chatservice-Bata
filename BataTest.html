@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>最新機能先行アクセス プレミアム会員専用</title>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+  import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA7CWUhLBKG_Oabxxw_7RfBpSANUoDh42s",
+    authDomain: "moodmirror-login.firebaseapp.com",
+    databaseURL: "https://moodmirror-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "moodmirror-login",
+    storageBucket: "moodmirror-login.firebasestorage.app",
+    messagingSenderId: "1091670187554",
+    appId: "1:1091670187554:web:ce919c1fca5b660995b47b",
+    measurementId: "G-TPJXPMPSGZ"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      // 未ログイン → チャットへリダイレクト
+      window.location.href = "chat.html";
+      return;
+    }
+
+    const snapshot = await get(ref(db, `users/${user.uid}/premium`));
+    const isPremium = snapshot.exists() && snapshot.val() === true;
+
+    if (!isPremium) {
+      // プレミアムでない → チャットへリダイレクト
+      window.location.href = "chat.html";
+    }
+  });
+      </script>
+</head>
+<body>
+  <h1>🔧 ベータ機能：先行アクセス</h1>
+  <p>このページでは、開発中の新機能を体験できます。</p>
+  <ul>
+    <li>🎨 背景カスタム（実装中）</li>
+    <li>🆕 GIFジェネレーター（試験導入）</li>
+    <li>📢 スタンプ・絵文字送信（まもなくリリース）</li>
+  </ul>
+</body>
+</html>
