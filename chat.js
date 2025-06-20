@@ -268,3 +268,28 @@ document.getElementById("image-form").addEventListener("submit", async (e) => {
     alert("画像送信に失敗しました");  
   }  
 });  
+
+// Gif表示処理
+function displayMessage(message) {
+  const messagesDiv = document.getElementById("messages");
+  const div = document.createElement("div");
+
+  if (message.type === "gif" && message.gifUrl) {
+    const img = document.createElement("img");
+    img.src = message.gifUrl;
+    img.style.maxWidth = "150px";
+    img.alt = "GIF";
+    div.appendChild(img);
+  } else if (message.type === "image" && message.imageDataUrl) {
+    // 既存の画像処理
+    const img = document.createElement("img");
+    img.src = message.imageDataUrl;
+    img.style.maxWidth = "150px";
+    div.appendChild(img);
+  } else {
+    div.textContent = `${message.sender === currentUser.uid ? "あなた" : "相手"}: ${message.text || ""}`;
+  }
+
+  messagesDiv.appendChild(div);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
