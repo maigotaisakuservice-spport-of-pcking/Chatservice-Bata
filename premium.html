@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>プレミアム加入ページ</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; text-align: center; }
+    h1 { color: #4caf50; }
+    button {
+      background: #4caf50; color: #fff; border: none;
+      padding: 12px 24px; font-size: 1rem; cursor: pointer;
+      border-radius: 4px;
+    }
+  </style>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA7CWUhLBKG_Oabxxw_7RfBpSANUoDh42s",
+      authDomain: "moodmirror-login.firebaseapp.com",
+      databaseURL: "https://moodmirror-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "moodmirror-login",
+      storageBucket: "moodmirror-login.firebasestorage.app",
+      messagingSenderId: "1091670187554",
+      appId: "1:1091670187554:web:ce919c1fca5b660995b47b",
+      measurementId: "G-TPJXPMPSGZ"
+    };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    let currentUser = null;
+    onAuthStateChanged(auth, user => {
+      if (!user) {
+        // 未ログインならチャットへ
+        window.location.href = "chat.html";
+      } else {
+        currentUser = user;
+      }
+    });
+
+    // 購入ボタン押下時
+    async function purchasePremium() {
+      if (!currentUser) return;
+      // プレミアムフラグをセット
+      await set(ref(db, `users/${currentUser.uid}/premium`), true);
+      // 完了ページへ遷移
+      window.location.href = "premiumComplete.html";
+    }
+  </script>
+</head>
+<body>
+  <h1>🎉 ChatGo プレミアム加入</h1>
+  <p>以下の特典が利用可能になります：</p>
+  <ul style="text-align: left; display: inline-block; margin-top: 1em;">
+    <li>– サイト最優先アクセス（高速読み込み）</li>
+    <li>– GIF送信（月5個まで）</li>
+    <li>– カスタムGIFアップロード（1アカウント 3個まで）</li>
+    <li>– ビデオ通話優先接続</li>
+    <li>– プレミアムサポートページ利用</li>
+    <li>– 先行アクセス機能ページ利用</li>
+    <li>- 1回だけの買い切りライセンス</li>
+  </ul>
+  <div style="margin-top: 2em;">
+    <button onclick="purchasePremium()">プレミアムへ加入する(現在プレリリース期間のため無料提供中です)</button>
+  </div>
+</body>
+</html>
