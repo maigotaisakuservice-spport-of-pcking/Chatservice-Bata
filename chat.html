@@ -134,5 +134,24 @@
 </form>
   </main>
   <script type="module" src="chat.js"></script>
+  <script>
+    // Premiumユーザー判定
+    let isPremiumUser = false;
+
+// 認証後などに実行（すでにauthが初期化されている想定）
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    const premiumRef = ref(db, `users/${user.uid}/premium`);
+    const snapshot = await get(premiumRef);
+    isPremiumUser = snapshot.exists() && snapshot.val() === true;
+
+    if (isPremiumUser) {
+      document.getElementById("gif-ui").style.display = "block";
+      loadGifLibrary();
+      loadCustomGifs();
+    }
+  }
+});
+  </script>
 </body>
 </html>
