@@ -148,10 +148,21 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
 
         // --- グローバル変数 ---
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = {
+  apiKey: "AIzaSyA7CWUhLBKG_Oabxxw_7RfBpSANUoDh42s",
+  authDomain: "moodmirror-login.firebaseapp.com",
+  databaseURL: "https://moodmirror-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "moodmirror-login",
+  storageBucket: "moodmirror-login.firebasestorage.app",
+  messagingSenderId: "1091670187554",
+  appId: "1:1091670187554:web:ce919c1fca5b660995b47b",
+  measurementId: "G-TPJXPMPSGZ"
+};
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         let db, auth, userId;
