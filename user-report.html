@@ -12,9 +12,9 @@
         }
         /* 入力フォームのスタイル */
         .form-label {
-            @apply block text-sm font-medium text-gray-400 mb-2; /* マージンを増やして見やすく調整 */
+            @apply block text-sm font-medium text-gray-400 mb-2;
         }
-        /* 入力ボックス、セレクトボックス、表示用テキストの共通スタイル */
+        /* 入力ボックスと表示用テキストの共通スタイル */
         .form-input, .form-display {
             @apply block w-full px-3 py-2 bg-black border border-gray-600 rounded-md shadow-sm text-white placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm transition-colors;
         }
@@ -22,12 +22,12 @@
         .form-input:focus {
             @apply bg-black;
         }
-        .form-input:disabled, .form-select:disabled {
+        .form-input:disabled {
             @apply bg-gray-800 text-gray-500 cursor-not-allowed border-gray-700;
         }
         /* IPアドレス表示用のスタイル */
         .form-display {
-             @apply cursor-default select-none; /* コピーできないようにする */
+             @apply cursor-default select-none;
         }
         .form-checkbox {
             @apply h-4 w-4 text-red-600 bg-gray-700 border-gray-600 rounded focus:ring-red-500;
@@ -60,7 +60,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                 </svg>
                 <h2 class="mt-4 text-center text-3xl font-extrabold text-red-500">
-                    警告：ユーザー報告
+                    ユーザー報告ページ
                 </h2>
                 <p class="mt-2 text-center text-sm text-gray-400">
                     虚偽の報告は利用規約違反となります。内容をよくご確認の上、送信してください。
@@ -143,28 +143,8 @@
         </div>
     </div>
 
-    <script type="module">
-        // Firebase モジュールのインポート
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-
-        // --- グローバル変数 ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyA7CWUhLBKG_Oabxxw_7RfBpSANUoDh42s",
-            authDomain: "moodmirror-login.firebaseapp.com",
-            databaseURL: "https://moodmirror-login-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "moodmirror-login",
-            storageBucket: "moodmirror-login.firebasestorage.app",
-            messagingSenderId: "1091670187554",
-            appId: "1:1091670187554:web:ce919c1fca5b660995b47b",
-            measurementId: "G-TPJXPMPSGZ"
-        };
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        let db, auth, userId;
-        let isInitialized = false;
+    <script>
+        const GAS_WEB_APP_URL = "YOUR_GAS_WEB_APP_URL_HERE";
 
         // --- DOM要素 ---
         const reportForm = document.getElementById('reportForm');
@@ -173,14 +153,15 @@
         const submitButton = document.getElementById('submitButton');
         const submitButtonText = document.getElementById('submitButtonText');
         const statusMessage = document.getElementById('statusMessage');
-        const ipAddressDisplay = document.getElementById('ipAddressDisplay'); // IP表示用の新しい要素
-        const ipAddressHiddenInput = document.getElementById('ipAddress'); // IP送信用の隠し要素
+        const ipAddressDisplay = document.getElementById('ipAddressDisplay');
+        const ipAddressHiddenInput = document.getElementById('ipAddress');
         const confirmationModal = document.getElementById('confirmationModal');
         const confirmReportButton = document.getElementById('confirmReportButton');
         const cancelReportButton = document.getElementById('cancelReportButton');
 
         // --- 機能関数 ---
-        
+        let isInitialized = false;
+
         const updateSubmitButtonState = () => {
             if (isInitialized && agreementCheckbox.checked) {
                 submitButton.disabled = false;
@@ -200,8 +181,8 @@
                 const response = await fetch('https://api.ipify.org?format=json');
                 if (!response.ok) throw new Error('Network response was not ok.');
                 const data = await response.json();
-                ipAddressDisplay.textContent = data.ip; // 表示用要素にIPアドレスをセット
-                ipAddressHiddenInput.value = data.ip; // 隠し要素にIPアドレスをセット
+                ipAddressDisplay.textContent = data.ip;
+                ipAddressHiddenInput.value = data.ip;
                 return true;
             } catch (error) {
                 console.error('IPアドレスの取得に失敗しました:', error);
@@ -213,43 +194,15 @@
         };
 
         const initializeApplication = async () => {
-            if (!firebaseConfig || Object.keys(firebaseConfig).length === 0) {
-                console.error("Firebase設定が見つかりません。");
-                submitButtonText.textContent = '設定エラー';
-                statusMessage.textContent = 'エラー: アプリケーションの設定が不十分です。';
-                statusMessage.className = 'text-center text-sm text-red-500';
-                return;
-            }
-            try {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                setLogLevel('debug');
+            submitButtonText.textContent = '情報取得中...';
+            await fetchIpAddress();
 
-                submitButtonText.textContent = '認証中...';
-                const userCredential = initialAuthToken
-                    ? await signInWithCustomToken(auth, initialAuthToken)
-                    : await signInAnonymously(auth);
-                userId = userCredential.user.uid;
-                console.log("Authenticated user ID:", userId);
-
-                submitButtonText.textContent = '情報取得中...';
-                await fetchIpAddress();
-
-                reportFieldset.disabled = false;
-                agreementCheckbox.disabled = false;
-                isInitialized = true;
-                statusMessage.textContent = '報告の準備ができました。';
-                statusMessage.className = 'text-center text-sm text-green-500';
-
-            } catch (error) {
-                console.error("アプリケーションの初期化に失敗しました:", error);
-                submitButtonText.textContent = '初期化エラー';
-                statusMessage.textContent = 'エラー: 初期化に失敗しました。リフレッシュしてください。';
-                statusMessage.className = 'text-center text-sm text-red-500';
-            } finally {
-                updateSubmitButtonState();
-            }
+            reportFieldset.disabled = false;
+            agreementCheckbox.disabled = false;
+            isInitialized = true;
+            statusMessage.textContent = '報告の準備ができました。';
+            statusMessage.className = 'text-center text-sm text-green-500';
+            updateSubmitButtonState();
         };
 
         const submitReport = async () => {
@@ -263,28 +216,29 @@
                 reportedUserEmail: reportForm.reportedUserEmail.value,
                 category: reportForm.category.value,
                 reason: reportForm.reason.value,
-                screenshotLink: reportForm.screenshotLink.value || null,
-                reporterIpAddress: ipAddressHiddenInput.value, // 隠し要素から値を取得
+                screenshotLink: reportForm.screenshotLink.value || 'なし',
+                reporterIpAddress: ipAddressHiddenInput.value || '不明',
                 agreedToTerms: agreementCheckbox.checked,
-                createdAt: serverTimestamp(),
-                status: 'new'
             };
 
             try {
-                const reportsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'reports');
-                const docRef = await addDoc(reportsCollectionRef, reportData);
+                const response = await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // クロスドメイン通信のため必要
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(reportData)
+                });
                 
-                console.log("Document written with ID: ", docRef.id);
+                // GASはno-corsモードで「ok」を返すため、statusだけでは成功を判断できない。
+                // 成功とみなし、画面を更新する。
                 statusMessage.textContent = '通報が正常に送信されました。';
                 statusMessage.className = 'text-center text-sm text-green-500';
                 reportForm.reset();
                 agreementCheckbox.checked = false;
-                ipAddressDisplay.textContent = reportData.reporterIpAddress; // 表示用要素もリセット
-                ipAddressHiddenInput.value = reportData.reporterIpAddress; // 隠し要素もリセット
 
             } catch (error) {
-                console.error("Firestoreへの書き込み中にエラーが発生しました: ", error);
-                statusMessage.textContent = 'エラー: 通報を送信できませんでした。';
+                console.error("レポート送信中にエラーが発生しました: ", error);
+                statusMessage.textContent = `エラー: 通報を送信できませんでした。詳細: ${error.message}`;
                 statusMessage.className = 'text-center text-sm text-red-500';
             } finally {
                 updateSubmitButtonState();
@@ -315,7 +269,6 @@
 
         // --- アプリケーションの実行開始 ---
         document.addEventListener('DOMContentLoaded', initializeApplication);
-
     </script>
 </body>
 </html>
