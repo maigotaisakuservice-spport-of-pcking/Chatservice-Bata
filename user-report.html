@@ -60,7 +60,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                 </svg>
                 <h2 class="mt-4 text-center text-3xl font-extrabold text-red-500">
-                    ユーザー報告ページ
+                    警告：ユーザー報告
                 </h2>
                 <p class="mt-2 text-center text-sm text-gray-400">
                     虚偽の報告は利用規約違反となります。内容をよくご確認の上、送信してください。
@@ -144,7 +144,7 @@
     </div>
 
     <script>
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzX_p4lCicI-czz5uVN8xa1xNIT1Ck9r7YmLpdcY5DHDM2SWOrU2vJaOtSquusct-0/exec";
+        const GAS_WEB_APP_URL = "YOUR_GAS_WEB_APP_URL_HERE";
 
         // --- DOM要素 ---
         const reportForm = document.getElementById('reportForm');
@@ -210,6 +210,7 @@
             submitButton.disabled = true;
             submitButtonText.textContent = '送信中...';
             statusMessage.textContent = '';
+            statusMessage.className = 'text-center text-sm text-gray-400';
 
             const reportData = {
                 reporterEmail: reportForm.reporterEmail.value,
@@ -224,17 +225,22 @@
             try {
                 const response = await fetch(GAS_WEB_APP_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // クロスドメイン通信のため必要
+                    mode: 'cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(reportData)
                 });
                 
-                // GASはno-corsモードで「ok」を返すため、statusだけでは成功を判断できない。
-                // 成功とみなし、画面を更新する。
-                statusMessage.textContent = '通報が正常に送信されました。';
-                statusMessage.className = 'text-center text-sm text-green-500';
-                reportForm.reset();
-                agreementCheckbox.checked = false;
+                const result = await response.json();
+
+                if (result.success) {
+                    statusMessage.textContent = '通報が正常に送信されました。';
+                    statusMessage.className = 'text-center text-sm text-green-500';
+                    reportForm.reset();
+                    agreementCheckbox.checked = false;
+                } else {
+                    statusMessage.textContent = `エラー: ${result.message}`;
+                    statusMessage.className = 'text-center text-sm text-yellow-400';
+                }
 
             } catch (error) {
                 console.error("レポート送信中にエラーが発生しました: ", error);
@@ -272,3 +278,4 @@
     </script>
 </body>
 </html>
+
