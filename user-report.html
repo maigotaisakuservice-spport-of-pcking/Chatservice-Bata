@@ -144,6 +144,7 @@
     </div>
 
     <script>
+        // この部分に、GASデプロイ後に取得したURLを貼り付けてください。
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyZj4QXzzTbheibt60UEkAjj1mHWfSOFqhynXcrTIN_ZSDNdqvenzzWAW1ku_0WgMQ/exec";
 
         // --- DOM要素 ---
@@ -230,6 +231,7 @@
                     body: JSON.stringify(reportData)
                 });
                 
+                // GASは正常なCORS応答を返すので、JSONとして処理
                 const result = await response.json();
 
                 if (result.success) {
@@ -278,4 +280,3 @@
     </script>
 </body>
 </html>
-
