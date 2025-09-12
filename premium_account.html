@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>アカウント管理 - ChatGo Premium</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .danger-zone { border: 2px solid #d9534f; padding: 20px; margin-top: 20px; }
+    .danger-zone h2 { color: #d9534f; }
+  </style>
+</head>
+<body>
+  <div id="intro-video-placeholder" style="display: none;"></div>
+
+  <div id="page-content">
+    <h1>⚙️ アカウント管理</h1>
+    <a href="premiumlist.html">戻る</a>
+    <div class="danger-zone">
+      <h2>危険区域</h2>
+      <button id="suspend-account-btn">アカウントを一時停止する</button>
+      <hr>
+      <button id="delete-account-btn">アカウントを完全に削除する</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, reauthenticateWithCredential, EmailAuthProvider, deleteUser } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+    import { playIntroVideo } from './intro_video.js';
+
+    const pageContent = document.getElementById('page-content');
+    const introPlaceholder = document.getElementById('intro-video-placeholder');
+
+    function initializeAppLogic() {
+        const firebaseConfig = {
+            apiKey: "AIzaSyA7CWUhLBKG_Oabxxw_7RfBpSANUoDh42s",
+            authDomain: "moodmirror-login.firebaseapp.com",
+            projectId: "moodmirror-login",
+            storageBucket: "moodmirror-login.firebasestorage.app",
+            messagingSenderId: "1091670187554",
+            appId: "1:1091670187554:web:ce919c1fca5b660995b47b",
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        let currentUser = null;
+
+        onAuthStateChanged(auth, async (user) => {
+          if (!user) { window.location.href = "index.html"; return; }
+          currentUser = user;
+          const userDocRef = doc(db, "users", currentUser.uid);
+          const userDoc = await getDoc(userDocRef);
+          if (!userDoc.exists() || !userDoc.data().premium) {
+            alert("このページはプレミアム会員限定です。");
+            window.location.href = "chat.html";
+          }
+        });
+
+        document.getElementById('suspend-account-btn').addEventListener('click', async () => {
+          if (!currentUser) return;
+          if (confirm("本当にアカウントを一時停止しますか？")) {
+            const userDocRef = doc(db, "users", currentUser.uid);
+            await updateDoc(userDocRef, { status: "suspended" });
+            alert("アカウントを一時停止しました。");
+            auth.signOut();
+          }
+        });
+
+        document.getElementById('delete-account-btn').addEventListener('click', async () => {
+          if (!currentUser) return;
+          const password = prompt("アカウントを完全に削除するには、パスワードを再入力してください。");
+          if (!password) return;
+          const credential = EmailAuthProvider.credential(currentUser.email, password);
+          try {
+            await reauthenticateWithCredential(currentUser, credential);
+            await deleteDoc(doc(db, "users", currentUser.uid));
+            await deleteUser(currentUser);
+            alert("アカウントが削除されました。");
+            window.location.href = "index.html";
+          } catch (error) {
+            alert("エラー: " + error.message);
+          }
+        });
+    }
+
+    const INTRO_FLAG = 'hasSeenAccountIntro';
+    if (!localStorage.getItem(INTRO_FLAG)) {
+        pageContent.style.display = 'none';
+        playIntroVideo(introPlaceholder, () => {
+            localStorage.setItem(INTRO_FLAG, 'true');
+            pageContent.style.display = 'block';
+            introPlaceholder.innerHTML = '';
+            initializeAppLogic();
+        });
+    } else {
+        initializeAppLogic();
+    }
+  </script>
+</body>
+</html>

@@ -5,222 +5,188 @@
   <title>ChatGo プレミアムチャット</title>
   <style>
     body { font-family: sans-serif; margin: 0; padding: 0; display: flex; height: 100vh; }
+    #page-content { display: flex; height: 100vh; width: 100%; }
     #chat-area { flex: 1; display: flex; flex-direction: column; border-right: 1px solid #ccc; }
     #messages { flex: 1; overflow-y: auto; padding: 10px; background: #f9f9f9; }
-    .message { margin-bottom: 8px; }
-    .message.premium { color: #D32F2F; font-weight: bold; }
-    #send-form { display: flex; padding: 10px; background: #fff; }
-    #send-form input { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-    #send-form button { margin-left: 8px; padding: 8px 16px; }
-    #invite-area { padding: 10px; background: #fff; }
-    #invite-area input { width: calc(100% - 100px); padding: 6px; }
-    #invite-area button { width: 80px; margin-left: 8px; }
-    #call-area { width: 400px; display: flex; flex-direction: column; align-items: center; padding: 10px; }
-    #videos { display: flex; flex-direction: column; gap: 10px; width: 100%; }
-    video { width: 100%; background: black; border-radius: 4px; }
-    #call-controls { margin-top: 10px; }
-    #call-controls button { margin: 0 5px; padding: 8px 12px; }
+    #send-form { display: flex; padding: 10px; }
+    #call-area { width: 400px; padding: 10px; display: flex; flex-direction: column; }
+    #videos { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+    video { width: 100%; background: black; border-radius: 5px; }
   </style>
 </head>
 <body>
-
-  <!-- チャット領域 -->
-  <div id="chat-area">
-    <h2 style="margin:10px;">プレミアムチャット</h2>
-    <div id="messages"></div>
-
-    <form id="send-form">
-      <input id="message-input" placeholder="メッセージを入力…" autocomplete="off" />
-      <button type="submit">送信</button>
-    </form>
-
-    <div id="invite-area">
-      <input id="invite-email" type="email" placeholder="メールで招待" />
-      <button id="invite-btn">招待</button>
+  <div id="intro-video-placeholder" style="display: none;"></div>
+  <div id="page-content" style="display: none;">
+    <div id="chat-area">
+      <h2>プレミアムグループチャット</h2>
+      <div id="messages"></div>
+      <form id="send-form"><input id="message-input" style="flex:1" autocomplete="off"/><button>送信</button></form>
     </div>
-  </div>
-
-  <!-- 通話領域 -->
-  <div id="call-area">
-    <h2>グループ通話</h2>
-    <div id="videos">
-      <video id="localVideo" autoplay muted playsinline></video>
-    </div>
-    <div id="call-controls">
-      <button id="start-call-btn">📞 通話開始</button>
-      <button id="mute-btn">🔇 ミュート</button>
-      <button id="leave-call-btn">❌ 退出</button>
+    <div id="call-area">
+      <h2>グループ通話</h2>
+      <div id="videos"><video id="localVideo" autoplay muted playsinline></video></div>
+      <div id="call-controls">
+        <button id="start-call-btn">📞 通話開始</button>
+        <button id="leave-call-btn">❌ 退出</button>
+      </div>
     </div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-    import { getDatabase, ref, get, set, push, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+    import { getFirestore, collection, doc, addDoc, onSnapshot, getDoc, setDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+    import { playIntroVideo } from './intro_video.js';
 
-    // --- Firebase 初期設定 ---
-    const firebaseConfig = {
-      apiKey: "AIzaSyA7CWUhLBKG_Oabxxw_7RfBpSANUoDh42s",
-      authDomain: "moodmirror-login.firebaseapp.com",
-      databaseURL: "https://moodmirror-login-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "moodmirror-login",
-      storageBucket: "moodmirror-login.firebasestorage.app",
-      messagingSenderId: "1091670187554",
-      appId: "1:1091670187554:web:ce919c1fca5b660995b47b",
-      measurementId: "G-TPJXPMPSGZ"
-    };
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
+    function initApp() {
+        const firebaseConfig = {
+            apiKey: "AIzaSyA7CWUhLBKG_Oabxxw_7RfBpSANUoDh42s",
+            authDomain: "moodmirror-login.firebaseapp.com",
+            projectId: "moodmirror-login",
+            storageBucket: "moodmirror-login.firebasestorage.app",
+            messagingSenderId: "1091670187554",
+            appId: "1:1091670187554:web:ce919c1fca5b660995b47b",
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-    // --- グローバル変数 ---
-    let currentUser = null;
-    let isPremium = false;
-    let currentChatId = "main";    // 固定チャットルームID
-    const peers = {};
-    const iceConfig = { iceServers:[{ urls:"stun:stun.l.google.com:19302" }] };
-    let localStream = null;
+        let currentUser, localStream;
+        const currentChatId = "main_premium_group";
+        const peers = {};
+        const iceConfig = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 
-    // --- 認証 & プレミアム判定 & 初期化 ---
-    onAuthStateChanged(auth, async user => {
-      if (!user) {
-        location.href = "chat.html";
-        return;
-      }
-      currentUser = user;
-      const snap = await get(ref(db, `users/${user.uid}/premium`));
-      isPremium = snap.exists() && snap.val() === true;
-      // チャット表示
-      listenMessages();
-      // 招待ボタン活性化
-      document.getElementById("invite-btn").onclick = inviteUser;
-      // 送信
-      document.getElementById("send-form").addEventListener("submit", sendMessage);
-      // 通話UI
-      document.getElementById("start-call-btn").onclick = startCall;
-      document.getElementById("mute-btn").onclick = toggleMute;
-      document.getElementById("leave-call-btn").onclick = leaveCall;
-    });
+        const messagesDiv = document.getElementById('messages');
+        const sendForm = document.getElementById('send-form');
+        const messageInput = document.getElementById('message-input');
+        const startCallBtn = document.getElementById('start-call-btn');
+        const leaveCallBtn = document.getElementById('leave-call-btn');
 
-    // --- チャット機能 ---
-    async function sendMessage(e) {
-      e.preventDefault();
-      const text = document.getElementById("message-input").value.trim();
-      if (!text) return;
-      await push(ref(db, `chats/${currentChatId}/messages`), {
-        sender: currentUser.uid,
-        text,
-        timestamp: Date.now()
-      });
-      document.getElementById("message-input").value = "";
-    }
-
-    function listenMessages() {
-      const messagesDiv = document.getElementById("messages");
-      onChildAdded(ref(db, `chats/${currentChatId}/messages`), snap => {
-        const msg = snap.val();
-        const div = document.createElement("div");
-        div.className = "message";
-        // プレミアムユーザー装飾
-        if (msg.sender === currentUser.uid) {
-          div.textContent = `あなた: ${msg.text}`;
-        } else {
-          div.textContent = `相手: ${msg.text}`;
-        }
-        // senderがプレミアムなら赤強調
-        get(ref(db, `users/${msg.sender}/premium`)).then(s => {
-          if (s.exists() && s.val()) div.classList.add("premium");
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { window.location.href = "index.html"; return; }
+            currentUser = user;
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if (!userDoc.exists() || !userDoc.data().premium) {
+                alert("このページはプレミアム会員限定です。");
+                window.location.href = "chat.html";
+                return;
+            }
+            listenMessages(db, currentChatId, messagesDiv);
+            sendForm.addEventListener("submit", (e) => sendMessage(e, db, currentUser, currentChatId, messageInput));
+            startCallBtn.addEventListener("click", () => startCall(db, currentUser, currentChatId, localStream, peers, iceConfig));
+            leaveCallBtn.addEventListener("click", () => leaveCall(db, currentUser, currentChatId, localStream, peers));
         });
-        messagesDiv.appendChild(div);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      });
     }
 
-    async function inviteUser() {
-      const email = document.getElementById("invite-email").value.trim();
-      if (!email) return alert("メールを入力してください");
-      await set(ref(db, `chats/${currentChatId}/invited/${email.replace('.', '_')}`), true);
-      alert("招待しました");
+    function listenMessages(db, chatId, messagesDiv) {
+        const q = query(collection(db, "premium_chats", chatId, "messages"), orderBy("timestamp"));
+        onSnapshot(q, (snapshot) => {
+            messagesDiv.innerHTML = '';
+            snapshot.forEach(doc => {
+                const msg = doc.data();
+                const div = document.createElement('div');
+                div.textContent = `${msg.senderName || '名無し'}: ${msg.text}`;
+                messagesDiv.appendChild(div);
+            });
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        });
     }
 
-    // --- P2Pグループ通話機能 ---
-    async function startCall() {
-      // 1) ローカルストリーム取得
-      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      document.getElementById("localVideo").srcObject = localStream;
-
-      // 2) シグナリングチャネルを作成
-      const rtcRoom = ref(db, `rtc/${currentChatId}`);
-
-      // 3) 既存参加者からOffer受信時
-      onChildAdded(rtcRoom, async snap => {
-        const from = snap.key;
-        const data = snap.val();
-        if (from === currentUser.uid) return;
-        // Offer受信
-        if (data.offer) {
-          const pc = createPeer(from);
-          await pc.setRemoteDescription(data.offer);
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
-          await set(ref(db, `rtc/${currentChatId}/${currentUser.uid}/answer`), answer);
-        }
-        // Answer受信
-        if (data.answer && peers[from]) {
-          peers[from].setRemoteDescription(data.answer);
-        }
-        // ICE受信
-        if (data.candidate && peers[from]) {
-          peers[from].addIceCandidate(data.candidate);
-        }
-      });
-
-      // 4) 自分からOfferを発行
-      const myOfferPc = createPeer(currentUser.uid);
-      const offer = await myOfferPc.createOffer();
-      await myOfferPc.setLocalDescription(offer);
-      await set(ref(db, `rtc/${currentChatId}/${currentUser.uid}/offer`), offer);
+    async function sendMessage(e, db, user, chatId, input) {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+        await addDoc(collection(db, "premium_chats", chatId, "messages"), {
+            sender: user.uid,
+            senderName: user.displayName || user.email,
+            text: text,
+            timestamp: new Date()
+        });
+        input.value = "";
     }
 
-    function createPeer(peerId) {
-      const pc = new RTCPeerConnection(iceConfig);
-      peers[peerId] = pc;
-      // トラック登録
-      localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
-      // ICE candidate
-      pc.onicecandidate = e => {
-        if (e.candidate) {
-          set(ref(db, `rtc/${currentChatId}/${currentUser.uid}/candidate`), e.candidate);
-        }
-      };
-      // リモート映像
-      pc.ontrack = e => {
-        let remote = document.getElementById(`v_${peerId}`);
-        if (!remote) {
-          remote = document.createElement("video");
-          remote.id = `v_${peerId}`;
-          remote.autoplay = true;
-          remote.playsInline = true;
-          document.getElementById("videos").appendChild(remote);
-        }
-        remote.srcObject = e.streams[0];
-      };
-      return pc;
+    async function startCall(db, user, chatId, stream, peers, config) {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        document.getElementById("localVideo").srcObject = stream;
+        const roomRef = collection(db, "premium_calls", chatId, "participants");
+
+        onSnapshot(roomRef, snapshot => {
+            snapshot.docChanges().forEach(async change => {
+                const data = change.doc.data();
+                const from = change.doc.id;
+                if (from === user.uid) return;
+                if (data.offer) {
+                    const pc = createPeer(db, user, chatId, from, stream, peers, config);
+                    await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+                    const answer = await pc.createAnswer();
+                    await pc.setLocalDescription(answer);
+                    await setDoc(doc(roomRef, user.uid), { answer }, { merge: true });
+                }
+                if (data.answer && peers[from]) {
+                    peers[from].setRemoteDescription(new RTCSessionDescription(data.answer));
+                }
+                if (data.candidate && peers[from]) {
+                    peers[from].addIceCandidate(new RTCIceCandidate(data.candidate));
+                }
+                if (change.type === "removed") {
+                    if (peers[from]) peers[from].close();
+                    const video = document.getElementById(`v_${from}`);
+                    if (video) video.remove();
+                }
+            });
+        });
+
+        const pc = createPeer(db, user, chatId, user.uid, stream, peers, config); // Self-peer for offer
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        await setDoc(doc(roomRef, user.uid), { offer });
     }
 
-    function toggleMute() {
-      if (!localStream) return;
-      localStream.getAudioTracks().forEach(t => t.enabled = !t.enabled);
+    function createPeer(db, user, chatId, peerId, stream, peers, config) {
+        const pc = new RTCPeerConnection(config);
+        peers[peerId] = pc;
+        stream.getTracks().forEach(track => pc.addTrack(track, stream));
+        pc.onicecandidate = e => {
+            if (e.candidate) {
+                setDoc(doc(collection(db, "premium_calls", chatId, "participants"), user.uid), { candidate: e.candidate.toJSON() }, { merge: true });
+            }
+        };
+        pc.ontrack = e => {
+            let remoteVideo = document.getElementById(`v_${peerId}`);
+            if (!remoteVideo) {
+                remoteVideo = document.createElement("video");
+                remoteVideo.id = `v_${peerId}`;
+                remoteVideo.autoplay = true;
+                remoteVideo.playsInline = true;
+                document.getElementById("videos").appendChild(remoteVideo);
+            }
+            remoteVideo.srcObject = e.streams[0];
+        };
+        return pc;
     }
 
-    function leaveCall() {
-      // シグナリング削除
-      remove(ref(db, `rtc/${currentChatId}/${currentUser.uid}`));
-      // PeerConnectionクローズ
-      Object.values(peers).forEach(pc => pc.close());
-      // 映像削除
-      document.querySelectorAll('#videos video[id^="v_"]').forEach(v => v.remove());
-      localStream = null;
+    async function leaveCall(db, user, chatId, stream, peers) {
+        await deleteDoc(doc(db, "premium_calls", chatId, "participants", user.uid));
+        Object.values(peers).forEach(pc => pc.close());
+        document.querySelectorAll('video[id^="v_"]').forEach(v => v.remove());
+        if (stream) stream.getTracks().forEach(track => track.stop());
+    }
+
+    // --- Init Logic ---
+    const pageContent = document.getElementById('page-content');
+    const introPlaceholder = document.getElementById('intro-video-placeholder');
+    const INTRO_FLAG = 'hasSeenPremiumChatIntro';
+    if (!localStorage.getItem(INTRO_FLAG)) {
+        pageContent.style.display = 'none';
+        playIntroVideo(introPlaceholder, () => {
+            localStorage.setItem(INTRO_FLAG, 'true');
+            pageContent.style.display = 'flex';
+            introPlaceholder.innerHTML = '';
+            initApp();
+        });
+    } else {
+        pageContent.style.display = 'flex';
+        initApp();
     }
   </script>
 </body>
