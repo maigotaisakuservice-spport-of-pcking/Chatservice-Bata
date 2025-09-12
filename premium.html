@@ -2,16 +2,46 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>プレミアム加入ページ</title>
+  <title>ChatGo Premiumプラン</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    body { font-family: sans-serif; padding: 20px; text-align: center; }
-    h1 { color: #4caf50; }
-    button {
-      background: #4caf50; color: #fff; border: none;
-      padding: 12px 24px; font-size: 1rem; cursor: pointer;
-      border-radius: 4px;
+    .perks-list {
+      text-align: left;
+      display: inline-block;
+      margin-top: 1em;
+      padding-left: 20px;
+    }
+    .perks-list li {
+      margin-bottom: 10px;
+    }
+    .purchase-button {
+      margin-top: 2em;
     }
   </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎉 ChatGo Premiumプラン</h1>
+      <a href="chat.html">戻る</a>
+    </header>
+
+    <h2>より安全で、快適なコミュニケーションを</h2>
+    <p>Premiumプランにアップグレードして、以下の限定機能をご利用ください。</p>
+
+    <ul class="perks-list">
+      <li><strong>🔒 安全で簡単なメッセージやり取り:</strong> AES-256暗号化とノーログポリシーで、プライバシーを最大限に保護します。</li>
+      <li><strong>🤫 一時チャットによるデータ保護:</strong> サーバーに記録が残らない、1対1の完全プライベートチャット機能を利用できます。</li>
+      <li><strong>🚀 最優先のフルアクセス:</strong> メッセージ送信上限が大幅に緩和され、いつでも快適にサービスをご利用いただけます。</li>
+      <li><strong>🎨 洗練されたPremium専用UI:</strong> GIF送信機能や、より使いやすく洗練された専用チャット画面をご提供します。</li>
+      <li><strong>⚙️ アカウントの自由な管理:</strong> 専用ページから、ご自身でアカウントの削除や一時停止をいつでも行えます。</li>
+    </ul>
+
+    <div class="purchase-button">
+      <button onclick="purchasePremium()">プレミアムに参加する (現在プレリリース期間のため無料)</button>
+    </div>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
@@ -34,37 +64,19 @@
     let currentUser = null;
     onAuthStateChanged(auth, user => {
       if (!user) {
-        // 未ログインならチャットへ
         window.location.href = "chat.html";
       } else {
         currentUser = user;
       }
     });
 
-    // 購入ボタン押下時
-    async function purchasePremium() {
+    // This needs to be a global function to be called by onclick
+    window.purchasePremium = async function() {
       if (!currentUser) return;
-      // プレミアムフラグをセット
+      // In the future, this should also write to Firestore
       await set(ref(db, `users/${currentUser.uid}/premium`), true);
-      // 完了ページへ遷移
       window.location.href = "premiumComplete.html";
     }
   </script>
-</head>
-<body>
-  <h1>🎉 ChatGo プレミアム加入</h1>
-  <p>以下の特典が利用可能になります：</p>
-  <ul style="text-align: left; display: inline-block; margin-top: 1em;">
-    <li>– サイト最優先アクセス（高速読み込み）</li>
-    <li>– GIF送信（月5個まで）</li>
-    <li>– カスタムGIFアップロード（1アカウント 3個まで）</li>
-    <li>– ビデオ通話優先接続</li>
-    <li>– プレミアムサポートページ利用</li>
-    <li>– 先行アクセス機能ページ利用</li>
-    <li>- 1回だけの買い切りライセンス</li>
-  </ul>
-  <div style="margin-top: 2em;">
-    <button onclick="purchasePremium()"><p>プレミアムへ加入する(現在プレリリース期間のため無料提供中です)</p></button>
-  </div>
 </body>
 </html>

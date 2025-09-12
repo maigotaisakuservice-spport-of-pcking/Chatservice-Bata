@@ -3,86 +3,117 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>プレミアム機能リンクページ</title>
+  <title>プレミアム機能</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .features-list { list-style: none; padding-left: 0; }
+    .features-list li { margin-bottom: 1rem; font-size: 1.1rem; }
+    .features-list a { text-decoration: none; color: #0056b3; font-weight: bold; }
+    .features-list a:hover { text-decoration: underline; }
+    #temp-chat-area button { font-size: 1em; }
+    #temp-chat-status { margin-top: 10px; background-color: #f0f2f5; padding: 10px; border-radius: 6px; }
+    #temp-chat-link { width: 100%; padding: 5px; margin-top: 5px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🌟 プレミアム機能</h1>
+      <a href="chat.html">戻る</a>
+    </header>
 
-  <!-- Firebaseプレミアムチェック -->
+    <p>プレミアム会員専用の機能へアクセスできます：</p>
+
+    <ul class="features-list">
+      <li><a href="premiumchat.html">👑 プレミアムチャット</a><br><small>安全な専用チャットルームです。</small></li>
+      <li id="temp-chat-area">
+        <button id="create-temp-chat-btn">🤫 一時チャットを開始</button><br>
+        <small>サーバーにログが残らないチャットです。</small>
+        <div id="temp-chat-status" style="display: none;">
+          <p>招待リンクを作成しました。このリンクを共有してください（リンクは一度しか使えません）：</p>
+          <input type="text" id="temp-chat-link" readonly>
+          <p id="waiting-message">相手の参加を待っています...</p>
+        </div>
+      </li>
+      <li><a href="premium_account.html">⚙️ アカウント管理</a><br><small>アカウントの削除や一時停止ができます。</small></li>
+      <li><a href="premiumsupport.html">✉️ プレミアムサポート</a><br><small>優先的にお問い合わせに対応します。</small></li>
+      <li><a href="BetaTest.html">🔧 先行アクセスページ</a><br><small>開発中の新機能をお試しいただけます。</small></li>
+    </ul>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+    import { getFirestore, doc, getDoc, collection, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyA7CWUhLBKG_Oabxxw_7RfBpSANUoDh42s",
       authDomain: "moodmirror-login.firebaseapp.com",
-      databaseURL: "https://moodmirror-login-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "moodmirror-login",
       storageBucket: "moodmirror-login.firebasestorage.app",
       messagingSenderId: "1091670187554",
       appId: "1:1091670187554:web:ce919c1fca5b660995b47b",
-      measurementId: "G-TPJXPMPSGZ"
     };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db = getDatabase(app);
+    const db = getFirestore(app);
+    let currentUser = null;
 
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
         window.location.href = "chat.html";
         return;
       }
-
-      const premiumRef = ref(db, `users/${user.uid}/premium`);
-      const snapshot = await get(premiumRef);
-      const isPremium = snapshot.exists() && snapshot.val() === true;
-
-      if (!isPremium) {
+      currentUser = user;
+      const userDocRef = doc(db, "users", currentUser.uid);
+      const userDoc = await getDoc(userDocRef);
+      if (!userDoc.exists() || !userDoc.data().premium) {
+        alert("このページはプレミアム会員限定です。");
         window.location.href = "chat.html";
       }
     });
+
+    const createChatBtn = document.getElementById('create-temp-chat-btn');
+    const statusArea = document.getElementById('temp-chat-status');
+    const chatLinkInput = document.getElementById('temp-chat-link');
+    const waitingMessage = document.getElementById('waiting-message');
+
+    createChatBtn.addEventListener('click', async () => {
+      if (!currentUser) return;
+
+      createChatBtn.disabled = true;
+      createChatBtn.textContent = '作成中...';
+
+      try {
+        const tempChatsCol = collection(db, "temporary_chats");
+        const newChatDoc = await addDoc(tempChatsCol, {
+          creator: currentUser.uid,
+          createdAt: serverTimestamp(),
+          participants: [currentUser.uid]
+        });
+
+        const chatLink = `${window.location.origin}/temp_chat.html?id=${newChatDoc.id}`;
+        chatLinkInput.value = chatLink;
+        statusArea.style.display = 'block';
+
+        // Listen for the other user to join
+        const unsubscribe = onSnapshot(newChatDoc, (doc) => {
+          const data = doc.data();
+          if (data && data.participants && data.participants.length > 1) {
+            unsubscribe(); // Stop listening
+            waitingMessage.textContent = '相手が参加しました！チャットに移動します...';
+            window.location.href = chatLink;
+          }
+        });
+
+      } catch (error) {
+        console.error("一時チャットの作成に失敗しました:", error);
+        alert("エラーが発生しました。");
+        createChatBtn.disabled = false;
+        createChatBtn.textContent = '🤫 一時チャットを開始';
+      }
+    });
   </script>
-
-  <style>
-    body {
-      font-family: "Segoe UI", sans-serif;
-      padding: 2rem;
-      background-color: #f5f5f5;
-      color: #333;
-    }
-    h1 {
-      color: #4caf50;
-    }
-    ul {
-      list-style: none;
-      padding-left: 0;
-    }
-    li {
-      margin-bottom: 1rem;
-    }
-    a {
-      text-decoration: none;
-      color: #2196f3;
-      font-weight: bold;
-    }
-    a:hover {
-      text-decoration: underline;
-    }
-    .back {
-      margin-top: 2rem;
-      display: inline-block;
-      color: #777;
-    }
-  </style>
-</head>
-<body>
-  <h1>🌟 プレミアム機能リンクページ</h1>
-  <p>プレミアム会員専用の機能へアクセスできます：</p>
-  <ul>
-    <li>🔧 <a href="BetaTest.html">先行アクセスページ</a></li>
-    <li>✉️ <a href="premiumsupport.html">プレミアムサポート</a></li>
-    <li>✉️ <a href="premiumchat.html">プレミアムチャット (Tokyoサーバーによる低遅延チャット & 通話　※ 日本からのアクセスのみの対応です。)</a></li>
-  </ul>
-
-  <a href="chat.html" class="back">🔙 チャットへ戻る</a>
 </body>
 </html>

@@ -1,24 +1,72 @@
-<!DOCTYPE html><html lang="ja">
-<head><meta charset="UTF-8"><title>ChatGo グループチャット</title>
-<style>
-  body { font-family:sans-serif; padding:10px; background:#f0f0f0; }
-  .group-item, .message-item { background:#fff; margin:5px 0; padding:8px; border-radius:5px; }
-</style>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ChatGo グループチャット</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .group-item {
+      background: #f9f9f9;
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .group-item:hover {
+      background-color: #eef;
+    }
+    #chat-area {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #ccc;
+    }
+    #messages {
+      height: 300px;
+      overflow-y: auto;
+      background: #fff;
+      padding: 10px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+      border-radius: 6px;
+    }
+  </style>
 </head>
 <body>
-  <h1>グループチャット</h1>
-  <div id="groups"></div>
-  <button onclick="createGroup()">グループ作成</button>
+  <div class="container">
+    <header>
+      <h1>グループチャット</h1>
+      <a href="chat.html">個人チャットに戻る</a>
+    </header>
 
-  <div id="chat-area" style="display:none;">
-    <h2>グループ: <span id="current-group-name"></span></h2>
-    招待: <input type="email" id="invite-email"><button onclick="inviteMember()">招待</button>
-    <button onclick="leaveGroup()">退出</button>
-    <div id="messages" style="max-height:300px;overflow:auto;"></div>
-    <form id="message-form"><input id="message-input" type="text"><button>送信</button></form>
-    <form id="image-form"><input id="image-input" type="file" accept="image/*"><button>画像送信</button></form>
-    <button id="startCallBtn">📞 通話開始</button>
+    <div id="groups"></div>
+    <button onclick="createGroup()">新しいグループを作成</button>
+
+    <div id="chat-area" style="display:none;">
+      <h2>グループ: <span id="current-group-name"></span></h2>
+      <div>
+        <input type="email" id="invite-email" placeholder="招待するユーザーのメールアドレス">
+        <button onclick="inviteMember()">招待</button>
+        <button onclick="leaveGroup()" style="background-color: #d9534f;">退出</button>
+      </div>
+
+      <div id="messages"></div>
+
+      <form id="message-form">
+        <input id="message-input" type="text" placeholder="メッセージを入力...">
+        <button type="submit">送信</button>
+      </form>
+
+      <form id="image-form" style="margin-top: 10px;">
+        <input id="image-input" type="file" accept="image/*">
+        <button type="submit">画像送信</button>
+      </form>
+
+      <button id="startCallBtn" style="margin-top: 20px;">📞 グループ通話を開始</button>
+    </div>
   </div>
 
   <script type="module" src="group.js"></script>
-</body></html>
+</body>
+</html>

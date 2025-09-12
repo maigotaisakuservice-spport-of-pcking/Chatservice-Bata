@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>一時チャット - ChatGo</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    #messages {
+      height: 400px;
+      overflow-y: auto;
+      background: #f0f2f5;
+      padding: 10px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+      border-radius: 6px;
+    }
+    .message {
+        padding: 8px 12px;
+        border-radius: 18px;
+        margin-bottom: 8px;
+        max-width: 70%;
+        word-wrap: break-word;
+    }
+    .message.sent {
+        background-color: #0084ff;
+        color: white;
+        align-self: flex-end;
+    }
+    .message.received {
+        background-color: #e4e6eb;
+        color: #050505;
+        align-self: flex-start;
+    }
+    #chat-area {
+        display: flex;
+        flex-direction: column;
+    }
+    .delete-banner {
+        background-color: #ffebe5;
+        color: #d9534f;
+        padding: 15px;
+        text-align: center;
+        border-radius: 8px;
+        border: 1px solid #d9534f;
+    }
+    .delete-banner button {
+        background-color: #d9534f;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🤫 一時チャット</h1>
+    </header>
+
+    <div class="delete-banner">
+      <p>このチャットは一時的なものです。どちらかのユーザーが退出ボタンを押すと、全てのメッセージがサーバーから完全に削除されます。</p>
+      <button id="delete-chat-btn">チャットを削除して退出する</button>
+    </div>
+
+    <div id="chat-area" style="margin-top: 20px;">
+      <div id="messages">
+          <p style="text-align: center; color: #888;">相手の参加を待っています...</p>
+      </div>
+      <form id="message-form" style="display: flex; gap: 10px;">
+        <input type="text" id="message-input" placeholder="暗号化されたメッセージを入力" style="flex: 1;" disabled>
+        <button type="submit" disabled>送信</button>
+      </form>
+    </div>
+  </div>
+  <script type="module" src="temp_chat.js"></script>
+</body>
+</html>

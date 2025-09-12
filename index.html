@@ -3,92 +3,117 @@
 <head>
   <meta charset="UTF-8">
   <title>ログイン - ChatGo</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    body {
-      font-family: sans-serif;
-      background-color: #e0f2e9;
+    .header-alert {
+      background-color: #ffc;
+      padding: 10px;
+      text-align: center;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 1px solid #e5e5e5;
+    }
+    .header-alert p {
       color: #333;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
-    form {
-      background: white;
-      padding: 2em;
-      border-radius: 1em;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    input {
-      display: block;
-      margin-bottom: 1em;
-      padding: 0.5em;
-      width: 100%;
-    }
-    button {
-      padding: 0.5em;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      width: 100%;
-      border-radius: 0.5em;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #45a049;
+      margin: 0;
     }
     .google-btn {
-      background-color: #db4437;
+      background-color: #db4437 !important;
     }
- 
-    .header-alert {
-      background-color: yellow;
-      padding: 5px;
-  }
-    .header-alert-ptag {
-         color: red;
-      }
+    .google-btn:hover {
+      background-color: #c23327 !important;
+    }
   </style>
 </head>
-  <header class="header-alert"><p class="header-alert-ptag">現在、チャットデータ保存先のサーバーが動作不良のため、データ処理制限を行っております。<br>ユーザーの皆様におきましては、なるべくページの再読み込みを最小限にしていただけると幸いです</p><a href="howto.html"><p><br>使い方の詳細はこちら</p></a></header>
 <body>
-  <h1>ChatGo ログイン</h1>
-  <form id="loginForm">
-    <input type="email" id="email" placeholder="メールアドレス" required>
-    <input type="password" id="password" placeholder="パスワード" required>
-    <button type="submit">ログイン</button>
-    <button type="button" class="google-btn" id="googleLogin">Googleでログイン</button>
-    <p><a href="reset.html">パスワードを忘れた場合</a></p>
-    <p><a href="register.html">新規登録はこちら</a></p>
-    <p><br><br><a href="status.html"><p>ログインできない際はご確認ください<br><br>ステータスページへ</p></a></p>
-  <br><br><br>
-    <a href="support.html"><p>サポートページへ</p></a>
-    <a href="terms-of-service.html"><p>利用規約 (必ずお読みください)</p></a>
-  </form>
+  <div class="header-alert">
+    <p>現在、サーバーメンテナンスのため、一部機能に制限がございます。ご不便をおかけします。</p>
+  </div>
 
-  <script type="module">  
-    import {  
-      auth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup  
-    } from "./app.js";  
-  
-    const loginForm = document.getElementById('loginForm');  
-    loginForm.addEventListener('submit', async (e) => {  
-      e.preventDefault();  
-      const email = document.getElementById('email').value;  
-      const password = document.getElementById('password').value;  
-  
-      try {  
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);  
-        const user = userCredential.user;  
-        sessionStorage.setItem('userId', user.uid);  
-        window.location.href = 'chat.html';  
-      } catch (error) {  
-        alert("ログイン失敗：" + error.message);  
-      }  
+  <div class="container">
+    <h1>ChatGo ログイン</h1>
+    <form id="loginForm">
+      <input type="email" id="email" placeholder="メールアドレス" required>
+      <input type="password" id="password" placeholder="パスワード" required>
+      <button type="submit" id="login-button">ログイン</button>
+      <button type="button" class="google-btn" id="googleLogin">Googleでログイン</button>
+      <p><a href="reset.html">パスワードを忘れた場合</a></p>
+      <p><a href="register.html">新規登録はこちら</a></p>
+    </form>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA7CWUhLBKG_Oabxxw_7RfBpSANUoDh42s",
+      authDomain: "moodmirror-login.firebaseapp.com",
+      projectId: "moodmirror-login",
+      storageBucket: "moodmirror-login.firebasestorage.app",
+      messagingSenderId: "1091670187554",
+      appId: "1:1091670187554:web:ce919c1fca5b660995b47b",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const handleLogin = async (userCredential) => {
+        const user = userCredential.user;
+        const userDocRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists() && userDoc.data().status === "suspended") {
+            if (confirm("このアカウントは一時停止されています。アカウントを再開しますか？")) {
+                await updateDoc(userDocRef, { status: "active" });
+                alert("アカウントが再開されました。");
+            } else {
+                auth.signOut();
+                return;
+            }
+        } else if (!userDoc.exists()) {
+            // For Google sign-in, create a user document if it doesn't exist
+            await setDoc(userDocRef, {
+                email: user.email,
+                displayName: user.displayName,
+                createdAt: new Date().toISOString(),
+                status: "active"
+            });
+        }
+
+        sessionStorage.setItem('userId', user.uid);
+        window.location.href = 'chat.html';
+    };
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const button = document.getElementById('login-button');
+      button.disabled = true;
+      button.textContent = "ログイン中...";
+
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        await handleLogin(userCredential);
+      } catch (error) {
+        alert("ログイン失敗：" + error.message);
+        button.disabled = false;
+        button.textContent = "ログイン";
+      }
     });
-</script>
-      
+
+    document.getElementById('googleLogin').addEventListener('click', async () => {
+      const provider = new GoogleAuthProvider();
+      try {
+        const result = await signInWithPopup(auth, provider);
+        await handleLogin(result);
+      } catch (error) {
+        alert("Googleログイン失敗：" + error.message);
+      }
+    });
+  </script>
 </body>
 </html>
-

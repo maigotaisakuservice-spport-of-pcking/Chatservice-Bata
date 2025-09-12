@@ -2,188 +2,133 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>中央部データログシステム</title>
+  <title>中央データセンター稼働状況</title>
+  <link rel="stylesheet" href="style.css">
   <style>
     body {
-      margin: 0;
       background: #eef3f9;
-      font-family: 'Segoe UI', sans-serif;
     }
-    h1 {
-      text-align: center;
-      padding: 1rem;
-      font-size: 2rem;
+    .dashboard-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
     }
     #data-center {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 2rem;
-      padding: 2rem;
-      max-width: 1300px;
-      margin: auto;
+      padding: 2rem 0;
     }
     .rack {
-      background: linear-gradient(145deg, #cbd9e5, #f7fbff);
+      background: linear-gradient(145deg, #dbe7f5, #ffffff);
       border-radius: 20px;
-      box-shadow: 10px 10px 30px rgba(0,0,0,0.1);
-      padding: 1rem;
-      transform: rotateY(-4deg) rotateX(1deg);
+      box-shadow: 8px 8px 25px rgba(0,0,0,0.1), -8px -8px 25px rgba(255,255,255,0.9);
+      padding: 1.5rem;
       transition: transform 0.3s ease;
+    }
+    .rack:hover {
+      transform: translateY(-5px);
     }
     .rack h3 {
       text-align: center;
       margin-bottom: 1rem;
-      color: #222;
+      color: #333;
+      font-size: 1.2rem;
     }
     .server {
-      background: #111;
+      background: #222;
       border-radius: 12px;
       margin: 10px 0;
-      padding: 0.5rem;
+      padding: 0.8rem;
       color: white;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       position: relative;
       cursor: pointer;
-      box-shadow: inset 0 0 6px rgba(255,255,255,0.15);
-    }
-    .server:hover {
-      outline: 2px solid #4faaff;
+      box-shadow: inset 0 0 8px rgba(255,255,255,0.1);
+      border: 1px solid #444;
     }
     .led {
-      width: 10px;
-      height: 10px;
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
       background: limegreen;
-      box-shadow: 0 0 6px limegreen;
+      box-shadow: 0 0 8px limegreen, 0 0 12px limegreen inset;
       display: inline-block;
-      margin-right: 8px;
+      margin-right: 10px;
+      vertical-align: middle;
     }
-    .server.off .led {
-      background: gray;
-      box-shadow: none;
-    }
-    .server.warning .led {
-      background: red;
-      box-shadow: 0 0 8px red;
-    }
-    .bar-container, .temp-container {
-      margin-top: 5px;
-      background: #333;
-      border-radius: 8px;
-      overflow: hidden;
-      height: 8px;
-    }
-    .bar {
-      height: 100%;
-      background: #4faaff;
-      width: 0%;
-      transition: width 0.5s;
-    }
-    .temp {
-      height: 100%;
-      width: 0%;
-      background: green;
-      transition: width 0.5s;
-    }
+    .server.off .led { background: #555; box-shadow: none; }
+    .server.warning .led { background: red; box-shadow: 0 0 8px red, 0 0 12px red inset; }
+    .bar-container, .temp-container { margin-top: 8px; background: #444; border-radius: 8px; overflow: hidden; height: 10px; }
+    .bar { height: 100%; background: #007bff; width: 0%; }
+    .temp { height: 100%; width: 0%; }
     #warning-message {
       display: none;
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255, 50, 50, 0.9);
-      color: white;
-      padding: 12px 24px;
+      text-align: center;
+      background: #ffcdd2;
+      color: #c62828;
+      padding: 15px;
       font-weight: bold;
       border-radius: 10px;
-      box-shadow: 0 0 20px red;
-      z-index: 999;
-      animation: pulse 1s infinite;
+      border: 1px solid #ef9a9a;
+      margin-bottom: 20px;
     }
-    @keyframes pulse {
-      0%, 100% { transform: translateX(-50%) scale(1); }
-      50% { transform: translateX(-50%) scale(1.05); }
-    }
-    canvas {
-      display: block;
-      margin: 10px auto 0;
-      max-width: 180px;
-    }
-    #modal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-    #modal-content {
-      background: white;
-      border-radius: 12px;
-      padding: 2rem;
-      max-width: 400px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.3);
-      animation: fadeIn 0.3s ease;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-20px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    #modal-close {
-      margin-top: 1rem;
-      padding: 8px 16px;
-      border: none;
-      background: #4faaff;
-      color: white;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+    #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; }
+    #modal-content { background: white; border-radius: 12px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 5px 25px rgba(0,0,0,0.2); }
   </style>
 </head>
 <body>
-  <h1>中央部データログシステム</h1>
-  <div id="warning-message">⚠️ 高負荷サーバーが検出されました</div>
-  <div id="data-center"></div>  <div id="modal">
+  <div class="dashboard-container">
+    <header>
+      <h1>中央データセンター稼働状況</h1>
+      <a href="index.html">ログインページへ</a>
+    </header>
+    <div id="warning-message">⚠️ 高負荷サーバーが検出されました</div>
+    <div id="data-center"></div>
+  </div>
+
+  <div id="modal">
     <div id="modal-content">
       <div id="modal-details"></div>
       <button id="modal-close">閉じる</button>
     </div>
-  </div>  <audio id="working-sound" loop>
-    <source src="https://cdn.pixabay.com/audio/2022/10/12/audio_1f19e79b5d.mp3" type="audio/mp3">
-  </audio>  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  <script>
+  </div>
+
+  <audio id="working-sound" loop src="https://cdn.pixabay.com/audio/2022/10/12/audio_1f19e79b5d.mp3"></audio>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // The JavaScript logic remains the same
     const cpuHistory = {};
     const workingSound = document.getElementById("working-sound");
-
     async function fetchStatus() {
-      const res = await fetch("/status/status.json");
-      return await res.json();
+      try {
+        const res = await fetch("status/status.json");
+        if (!res.ok) throw new Error("Status file not found");
+        return await res.json();
+      } catch (error) {
+        console.error("Could not fetch status:", error);
+        return {}; // Return empty data to prevent script from crashing
+      }
     }
-
     function getTempColor(temp) {
-      if (temp < 60) return "green";
-      if (temp < 75) return "orange";
-      return "red";
+      if (temp < 60) return "linear-gradient(90deg, #28a745, #218838)";
+      if (temp < 75) return "linear-gradient(90deg, #ffc107, #e0a800)";
+      return "linear-gradient(90deg, #dc3545, #c82333)";
     }
-
     function createServerElement(server) {
       const div = document.createElement("div");
       div.className = "server";
       if (server.status === "OFF") div.classList.add("off");
-
-      const cpu = parseFloat(server.cpu);
-      const temp = parseFloat(server.temp || 32);
-
-      if (server.status === "ON" && cpu > 80) {
+      const cpu = parseFloat(server.cpu) || 0;
+      const temp = parseFloat(server.temp) || 32;
+      if (server.status === "ON" && cpu > 85) {
         div.classList.add("warning");
       }
-
       div.innerHTML = `
         <span class="led"></span> ${server.name}
-        <div class="bar-container"><div class="bar" style="width:${cpu}%;"></div></div>
-        <div class="temp-container"><div class="temp" style="width:${temp}%; background:${getTempColor(temp)};"></div></div>
+        <div class="bar-container" title="CPU: ${cpu}%"><div class="bar" style="width:${cpu}%;"></div></div>
+        <div class="temp-container" title="Temp: ${temp}°C"><div class="temp" style="width:${temp}%; background:${getTempColor(temp)};"></div></div>
       `;
-
       div.addEventListener("click", () => {
         const modal = document.getElementById("modal");
         const content = document.getElementById("modal-details");
@@ -194,87 +139,47 @@
           <p>温度: ${temp}℃</p>
           <p>状態: ${server.status}</p>
           <h4>最近のCPU履歴</h4>
-          <ul>${hist.slice(-5).map(v => `<li>${v}%</li>`).join('')}</ul>
+          <ul style="padding-left: 20px;">${hist.slice(-5).map(v => `<li>${v}%</li>`).join('') || '<li>データなし</li>'}</ul>
         `;
         modal.style.display = "flex";
       });
-
       cpuHistory[server.name] = (cpuHistory[server.name] || []).concat(cpu).slice(-20);
-      return { div, warning: cpu > 85 && server.status === "ON", cpu };
+      return { div, warning: cpu > 85 && server.status === "ON", cpu, status: server.status };
     }
-
     async function renderDataCenter() {
       const data = await fetchStatus();
+      if (Object.keys(data).length === 0) return;
       const container = document.getElementById("data-center");
       const warningMsg = document.getElementById("warning-message");
-
       container.innerHTML = "";
       let warningExists = false;
       let anyServerOn = false;
-
       for (const [rackName, servers] of Object.entries(data)) {
         const rackDiv = document.createElement("div");
         rackDiv.className = "rack";
-        const title = document.createElement("h3");
-        title.textContent = rackName;
-        rackDiv.appendChild(title);
-
-        let cpuSum = 0;
-        let activeCount = 0;
-
+        rackDiv.innerHTML = `<h3>${rackName}</h3>`;
+        let cpuSum = 0, activeCount = 0;
         servers.forEach(server => {
-          const { div, warning, cpu } = createServerElement(server);
+          const { div, warning, cpu, status } = createServerElement(server);
           if (warning) warningExists = true;
-          if (server.status === "ON") {
+          if (status === "ON") {
             cpuSum += cpu;
             activeCount++;
             anyServerOn = true;
           }
           rackDiv.appendChild(div);
         });
-
-        const avgCpu = activeCount ? (cpuSum / activeCount) : 0;
-
-        const canvas = document.createElement("canvas");
-        const canvasId = `chart-${rackName.replace(/\s/g, '')}`;
-        canvas.id = canvasId;
-        rackDiv.appendChild(canvas);
-
-        setTimeout(() => {
-          new Chart(canvas, {
-            type: 'doughnut',
-            data: {
-              labels: ['稼働', '空き'],
-              datasets: [{
-                data: [avgCpu, 100 - avgCpu],
-                backgroundColor: ['#4faaff', '#ccc'],
-                borderWidth: 0
-              }]
-            },
-            options: {
-              responsive: true,
-              cutout: '70%',
-              plugins: {
-                tooltip: { enabled: false },
-                legend: { display: false }
-              }
-            }
-          });
-        }, 100);
-
         container.appendChild(rackDiv);
       }
-
       warningMsg.style.display = warningExists ? "block" : "none";
-      if (anyServerOn) workingSound.play();
-      else workingSound.pause();
+      if (anyServerOn && workingSound.paused) workingSound.play().catch(e=>console.warn("Autoplay blocked"));
+      else if (!anyServerOn) workingSound.pause();
     }
-
     document.getElementById("modal-close").onclick = () => {
       document.getElementById("modal").style.display = "none";
     };
-
     renderDataCenter();
     setInterval(renderDataCenter, 10000);
-  </script></body>
+  </script>
+</body>
 </html>

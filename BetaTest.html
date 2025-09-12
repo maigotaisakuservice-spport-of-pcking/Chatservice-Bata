@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>最新機能先行アクセス プレミアム会員専用</title>
+  <link rel="stylesheet" href="style.css">
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
@@ -41,12 +42,17 @@
       </script>
 </head>
 <body>
-  <h1>🔧 ベータ機能：先行アクセス</h1>
-  <p>このページでは、開発中の新機能を体験できます。</p>
-  <ul>
-    <li>🎨 背景カスタム（実装中）</li>
-    <li>🆕 GIFジェネレーター（試験導入）</li>
-    <li>📢 スタンプ・絵文字送信（まもなくリリース）</li>
-  </ul>
+  <div class="container">
+    <header>
+      <h1>🔧 ベータ機能：先行アクセス</h1>
+    </header>
+    <p>このページでは、開発中の新機能を体験できます。</p>
+    <ul>
+      <li>🎨 背景カスタム（実装中）</li>
+      <li>🆕 GIFジェネレーター（試験導入）</li>
+      <li>📢 スタンプ・絵文字送信（まもなくリリース）</li>
+    </ul>
+    <a href="premiumlist.html"><button>戻る</button></a>
+  </div>
 </body>
 </html>

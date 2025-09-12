@@ -3,66 +3,63 @@
 <head>
   <meta charset="UTF-8">
   <title>ChatGo - 新規登録</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    body {
-      font-family: sans-serif;
-      background-color: #f1fff5;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      flex-direction: column;
-    }
-    form {
-      background: #fff;
-      padding: 2em;
-      border-radius: 1em;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    input, button {
-      display: block;
-      width: 100%;
-      padding: 0.5em;
-      margin-bottom: 1em;
-    }
-    button {
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 0.5em;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
     .google-btn {
-      background-color: #dd4b39;
+      background-color: #db4437 !important;
+      margin-top: 10px;
+    }
+    .google-btn:hover {
+      background-color: #c23327 !important;
+    }
+    .terms {
+      font-size: 0.9em;
+      color: #777;
+      text-align: center;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
-  <h2>ChatGo 新規登録</h2>
-  <a href="index.html">ログイン画面へ戻る</a>
-  <form id="registerForm">
-    <input type="email" id="email" placeholder="メールアドレス" required>
-    <input type="password" id="password" placeholder="パスワード" required>
-    <button type="submit">登録</button>
-  </form>
+  <div class="container">
+    <header>
+      <h1>ChatGo 新規登録</h1>
+      <a href="index.html">ログイン画面へ</a>
+    </header>
 
-  <button class="google-btn" id="googleSignUp">Googleで登録</button>
-  <a href="terms-of-service.html"><p>利用規約 (必ずお読みください)</p></a>
-  <h4>アカウントの作成、サービスの利用を続けることで、利用規約に同意したことになります</h4>
+    <form id="registerForm">
+      <input type="email" id="email" placeholder="メールアドレス" required>
+      <input type="password" id="password" placeholder="パスワード" required>
+      <button type="submit">登録</button>
+    </form>
 
-<script type="module">  
-    import {  
-      auth,  
-      db,  
-      createUserWithEmailAndPassword,  
-      GoogleAuthProvider,  
-      signInWithPopup,  
-      ref,  
-      set  
-    } from './app.js';  
+    <button class="google-btn" id="googleSignUp">Googleで登録</button>
+
+    <div class="terms">
+      <p><a href="terms-of-service.html">利用規約</a>に同意の上、ご登録ください。</p>
+      <p>アカウントを作成することで、利用規約に同意したことになります。</p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA7CWUhLBKG_Oabxxw_7RfBpSANUoDh42s",
+      authDomain: "moodmirror-login.firebaseapp.com",
+      databaseURL: "https://moodmirror-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "moodmirror-login",
+      storageBucket: "moodmirror-login.firebasestorage.app",
+      messagingSenderId: "1091670187554",
+      appId: "1:1091670187554:web:ce919c1fca5b660995b47b",
+      measurementId: "G-TPJXPMPSGZ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
   
     document.getElementById('registerForm').addEventListener('submit', async (e) => {  
       e.preventDefault();  
@@ -76,7 +73,7 @@
           email: user.email,  
           createdAt: new Date().toISOString()  
         });  
-        alert("登録完了！");  
+        alert("登録完了！チャット画面に移動します。");
         window.location.href = "chat.html";  
       } catch (error) {  
         alert("登録エラー：" + error.message);  
@@ -88,18 +85,17 @@
       try {  
         const result = await signInWithPopup(auth, provider);  
         const user = result.user;  
-        await set(ref(db, 'users/' + user.uid), {  
+        await set(ref(db, 'users/'' + user.uid), {
           email: user.email,  
           createdAt: new Date().toISOString(),  
           provider: 'google'  
         });  
-        alert("Googleで登録完了！");  
+        alert("Googleでの登録が完了しました！チャット画面に移動します。");
         window.location.href = "chat.html";  
       } catch (error) {  
         alert("Google登録エラー：" + error.message);  
       }  
     });  
   </script>
-
 </body>
 </html>

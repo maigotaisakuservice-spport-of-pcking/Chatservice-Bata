@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>アカウント管理 - ChatGo Premium</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .danger-zone {
+      border: 2px solid #d9534f;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+    .danger-zone h2 {
+      color: #d9534f;
+      margin-top: 0;
+    }
+    .danger-zone button {
+      background-color: #d9534f;
+    }
+    .danger-zone button:hover {
+      background-color: #c9302c;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>⚙️ アカウント管理</h1>
+      <a href="premiumlist.html">戻る</a>
+    </header>
+
+    <div>
+      <h2>アカウント操作</h2>
+      <p>ここではアカウントの一時停止や削除を行うことができます。操作は取り消せませんので、ご注意ください。</p>
+    </div>
+
+    <div class="danger-zone">
+      <h2>危険区域</h2>
+      <div>
+        <h3>アカウントの一時停止</h3>
+        <p>アカウントを一時的に停止します。再度ログインすることで、いつでも再開できます。</p>
+        <button id="suspend-account-btn">アカウントを一時停止する</button>
+      </div>
+      <hr style="margin: 20px 0;">
+      <div>
+        <h3>アカウントの完全削除</h3>
+        <p>あなたのアカウントと関連する全てのデータ（メッセージ、フレンドリスト等）を完全に削除します。この操作は元に戻せません。</p>
+        <button id="delete-account-btn">アカウントを完全に削除する</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, reauthenticateWithCredential, EmailAuthProvider, deleteUser } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA7CWUhLBKG_Oabxxw_7RfBpSANUoDh42s",
+      authDomain: "moodmirror-login.firebaseapp.com",
+      projectId: "moodmirror-login",
+      storageBucket: "moodmirror-login.firebasestorage.app",
+      messagingSenderId: "1091670187554",
+      appId: "1:1091670187554:web:ce919c1fca5b660995b47b",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    let currentUser = null;
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "index.html";
+        return;
+      }
+      currentUser = user;
+      const userDocRef = doc(db, "users", currentUser.uid);
+      const userDoc = await getDoc(userDocRef);
+      if (!userDoc.exists() || !userDoc.data().premium) {
+        alert("このページはプレミアム会員限定です。");
+        window.location.href = "chat.html";
+      }
+    });
+
+    // Suspend Account
+    document.getElementById('suspend-account-btn').addEventListener('click', async () => {
+      if (!currentUser) return;
+      if (confirm("本当にアカウントを一時停止しますか？再度ログインするまで利用できなくなります。")) {
+        const userDocRef = doc(db, "users", currentUser.uid);
+        try {
+          await updateDoc(userDocRef, { status: "suspended" });
+          alert("アカウントを一時停止しました。ログアウトします。");
+          auth.signOut();
+        } catch (e) {
+          alert("エラーが発生しました: " + e.message);
+        }
+      }
+    });
+
+    // Delete Account
+    document.getElementById('delete-account-btn').addEventListener('click', async () => {
+      if (!currentUser) return;
+
+      const confirmation = prompt("アカウント削除の最終確認です。この操作は取り消せません。削除する場合は、あなたのメールアドレスを入力してください。");
+      if (confirmation !== currentUser.email) {
+        alert("メールアドレスが一致しません。操作を中止しました。");
+        return;
+      }
+
+      const password = prompt("アカウントを削除するには、パスワードを再入力してください。");
+      if (!password) {
+        alert("パスワードが入力されませんでした。");
+        return;
+      }
+
+      const credential = EmailAuthProvider.credential(currentUser.email, password);
+
+      try {
+        // Re-authenticate user
+        await reauthenticateWithCredential(currentUser, credential);
+
+        // Delete user data from Firestore
+        await deleteDoc(doc(db, "users", currentUser.uid));
+
+        // Delete user from Authentication
+        await deleteUser(currentUser);
+
+        alert("アカウントが正常に削除されました。");
+        window.location.href = "index.html";
+
+      } catch (error) {
+        alert("アカウントの削除に失敗しました。エラー: " + error.message);
+        console.error(error);
+      }
+    });
+  </script>
+</body>
+</html>

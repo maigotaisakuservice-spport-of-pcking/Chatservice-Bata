@@ -3,50 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <title>パスワードリセット - ChatGo</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background-color: #e0f2e9;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      flex-direction: column;
-    }
-    form {
-      background: #fff;
-      padding: 2em;
-      border-radius: 1em;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    input, button {
-      display: block;
-      width: 100%;
-      padding: 0.5em;
-      margin-bottom: 1em;
-    }
-    button {
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 0.5em;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h2>パスワードリセット</h2>
-  <a href="index.html">ログイン画面へ戻る</a>
-  <form id="resetForm">
-    <input type="email" id="resetEmail" placeholder="メールアドレス" required>
-    <button type="submit">リセットリンク送信</button>
-  </form>
+  <div class="container">
+    <header>
+      <h1>パスワードリセット</h1>
+      <a href="index.html">ログイン画面へ</a>
+    </header>
+
+    <p>ご登録のメールアドレスを入力してください。パスワードリセット用のリンクを送信します。</p>
+
+    <form id="resetForm">
+      <input type="email" id="resetEmail" placeholder="メールアドレス" required>
+      <button type="submit">リセットリンクを送信</button>
+    </form>
+  </div>
 
   <script type="module">
-    import { auth, sendPasswordResetEmail } from "./app.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+    import { getAuth, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA7CWUhLBKG_Oabxxw_7RfBpSANUoDh42s",
+      authDomain: "moodmirror-login.firebaseapp.com",
+      databaseURL: "https://moodmirror-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "moodmirror-login",
+      storageBucket: "moodmirror-login.firebasestorage.app",
+      messagingSenderId: "1091670187554",
+      appId: "1:1091670187554:web:ce919c1fca5b660995b47b",
+      measurementId: "G-TPJXPMPSGZ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
     document.getElementById('resetForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -54,9 +44,10 @@
 
       try {
         await sendPasswordResetEmail(auth, email);
-        alert("リセットリンクを送信しました。メールを確認してください。");
+        alert("リセットリンクを送信しました。メールをご確認ください。");
+        window.location.href = "index.html";
       } catch (error) {
-        alert("送信エラー：" + error.message);
+        alert("送信エラー: " + error.message);
       }
     });
   </script>

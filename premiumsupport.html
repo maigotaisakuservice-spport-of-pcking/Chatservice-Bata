@@ -3,56 +3,77 @@
 <head>
   <meta charset="UTF-8">
   <title>プレミアムサポート</title>
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-  import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyA7CWUhLBKG_Oabxxw_7RfBpSANUoDh42s",
-    authDomain: "moodmirror-login.firebaseapp.com",
-    databaseURL: "https://moodmirror-login-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "moodmirror-login",
-    storageBucket: "moodmirror-login.firebasestorage.app",
-    messagingSenderId: "1091670187554",
-    appId: "1:1091670187554:web:ce919c1fca5b660995b47b",
-    measurementId: "G-TPJXPMPSGZ"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getDatabase(app);
-
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      // 未ログイン → チャットへリダイレクト
-      window.location.href = "chat.html";
-      return;
+  <link rel="stylesheet" href="style.css">
+  <style>
+    textarea {
+      width: calc(100% - 22px);
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border: 1px solid #dddfe2;
+      min-height: 150px;
     }
-
-    const snapshot = await get(ref(db, `users/${user.uid}/premium`));
-    const isPremium = snapshot.exists() && snapshot.val() === true;
-
-    if (!isPremium) {
-      // プレミアムでない → チャットへリダイレクト
-      window.location.href = "chat.html";
-    }
-  });
-</script>
+  </style>
 </head>
 <body>
-  <h1>✉️ 機能リクエスト・優先サポート</h1>
-  <form id="support-form">
-    <label>件名：<input type="text" id="subject" required></label><br>
-    <label>内容：<br><textarea id="body" required rows="6" cols="40"></textarea></label><br>
-    <button type="submit">送信</button>
-  </form>
+  <div class="container">
+    <header>
+      <h1>✉️ 優先サポート & 機能リクエスト</h1>
+      <a href="premiumlist.html">戻る</a>
+    </header>
 
-  <script>
+    <p>プレミアムユーザー様からのお問い合わせや機能リクエストを優先的に受け付けます。</p>
+
+    <form id="support-form">
+      <label for="subject">件名：</label>
+      <input type="text" id="subject" required>
+
+      <label for="body">内容：</label>
+      <textarea id="body" required></textarea>
+
+      <button type="submit">送信</button>
+    </form>
+  </div>
+
+  <script type="module">
+    // Firebase check
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA7CWUhLBKG_Oabxxw_7RfBpSANUoDh42s",
+      authDomain: "moodmirror-login.firebaseapp.com",
+      databaseURL: "https://moodmirror-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "moodmirror-login",
+      storageBucket: "moodmirror-login.firebasestorage.app",
+      messagingSenderId: "1091670187554",
+      appId: "1:1091670187554:web:ce919c1fca5b660995b47b",
+      measurementId: "G-TPJXPMPSGZ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "chat.html";
+        return;
+      }
+      const snapshot = await get(ref(db, `users/${user.uid}/premium`));
+      if (!(snapshot.exists() && snapshot.val() === true)) {
+        alert("このページはプレミアム会員限定です。");
+        window.location.href = "chat.html";
+      }
+    });
+
+    // Form submission
     document.getElementById("support-form").addEventListener("submit", (e) => {
       e.preventDefault();
+      // Here you would typically send the data to a backend service or Firestore
       alert("リクエストを送信しました。ご協力ありがとうございます！");
-      // FirebaseまたはGoogle Apps Scriptへ送信する実装は別途
+      document.getElementById("support-form").reset();
     });
   </script>
 </body>

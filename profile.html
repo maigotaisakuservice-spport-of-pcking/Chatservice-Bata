@@ -1,129 +1,125 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <title>ChatGo - プロフィール</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    body {
-      font-family: sans-serif;
-      margin: 0;
-      background-color: white;
-      color: black;
-      transition: 0.3s;
+    .dark-mode {
+      background-color: #1c1e21;
+      color: #fff;
     }
-    .dark {
-      background-color: #121212;
-      color: white;
+    .dark-mode .container {
+      background-color: #2d2d2d;
     }
-    header {
-      background-color: #4CAF50;
-      color: white;
-      padding: 1em;
-      text-align: center;
+    .dark-mode header {
+       background-color: #2d2d2d;
     }
-    .container {
-      padding: 2em;
-      max-width: 400px;
-      margin: auto;
-    }
-    label {
-      display: block;
-      margin-top: 1em;
-    }
-    input {
-      width: 100%;
-      padding: 0.5em;
-      margin-top: 0.5em;
-    }
-    button {
-      margin-top: 1em;
-      padding: 0.5em 1em;
-      background: #4CAF50;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    #toggleMode {
-      position: absolute;
-      right: 1em;
-      top: 1em;
+    .profile-actions {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
   </style>
 </head>
 <body>
-  <header>
-    ChatGo - プロフィール
-    <button id="toggleMode">切替</button>
-  </header>
-
   <div class="container">
+    <header>
+      <h1>プロフィール</h1>
+      <button id="toggleMode">ダークモード切替</button>
+    </header>
+
     <h2>ようこそ、<span id="userEmail">ユーザー</span>さん</h2>
-    <label for="displayName">表示名:</label>
-    <input type="text" id="displayName" placeholder="表示名を入力">
-    <button id="saveBtn">保存</button>
-    <button id="logoutBtn">ログアウト</button>
-    <a href="premium.html">プレミアムへ加入する</a>
-    <a href="chat.html">チャット画面へ戻る</a>
+
+    <div>
+      <label for="displayName">表示名:</label>
+      <input type="text" id="displayName" placeholder="表示名を入力">
+      <button id="saveBtn">保存</button>
+    </div>
+
+    <div class="profile-actions">
+      <a href="premium.html"><button>プレミアムに登録</button></a>
+      <a href="chat.html"><button>チャット画面へ戻る</button></a>
+      <button id="logoutBtn" style="background-color: #d9534f;">ログアウト</button>
+    </div>
   </div>
 
   <script type="module">
-    import { auth, db, ref, onAuthStateChanged, set, get, child } from './app.js';
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+    import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA7CWUhLBKG_Oabxxw_7RfBpSANUoDh42s",
+      authDomain: "moodmirror-login.firebaseapp.com",
+      databaseURL: "https://moodmirror-login-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "moodmirror-login",
+      storageBucket: "moodmirror-login.firebasestorage.app",
+      messagingSenderId: "1091670187554",
+      appId: "1:1091670187554:web:ce919c1fca5b660995b47b",
+      measurementId: "G-TPJXPMPSGZ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
 
     const emailSpan = document.getElementById('userEmail');
     const displayNameInput = document.getElementById('displayName');
     const saveBtn = document.getElementById('saveBtn');
     const logoutBtn = document.getElementById('logoutBtn');
-    const toggleMode = document.getElementById('toggleMode');
+    const toggleModeBtn = document.getElementById('toggleMode');
 
-    let currentMode = sessionStorage.getItem('mode') || 'light';
-    if (currentMode === 'dark') document.body.classList.add('dark');
-
-    toggleMode.addEventListener('click', () => {
-      currentMode = (currentMode === 'light') ? 'dark' : 'light';
-      sessionStorage.setItem('mode', currentMode);
-      document.body.classList.toggle('dark');
+    // Dark Mode
+    let currentMode = localStorage.getItem('mode') || 'light';
+    if (currentMode === 'dark') {
+        document.body.classList.add('dark-mode');
+    }
+    toggleModeBtn.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      currentMode = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
+      localStorage.setItem('mode', currentMode);
     });
 
+    // Auth State
     onAuthStateChanged(auth, async (user) => {
-      if (!user) return window.location.href = 'login.html';
+      if (!user) {
+        window.location.href = 'index.html';
+        return;
+      }
       emailSpan.textContent = user.email;
-
-      const snap = await get(child(ref(db), `users/${user.uid}`));
+      const userRef = ref(db, `users/${user.uid}`);
+      const snap = await get(userRef);
       if (snap.exists()) {
-        const data = snap.val();
-        displayNameInput.value = data.displayName || '';
+        displayNameInput.value = snap.val().displayName || '';
       }
     });
 
+    // Save Display Name
     saveBtn.addEventListener('click', async () => {
-      const name = displayNameInput.value;
-      const uid = auth.currentUser.uid;
-      await set(ref(db, `users/${uid}`), {
-        email: auth.currentUser.email,
-        displayName: name
-      });
-      alert('保存しました');
+      const name = displayNameInput.value.trim();
+      const user = auth.currentUser;
+      if (user) {
+        const userRef = ref(db, `users/${user.uid}`);
+        const snap = await get(userRef);
+        const userData = snap.exists() ? snap.val() : { email: user.email };
+        await set(userRef, { ...userData, displayName: name });
+        alert('保存しました');
+      }
     });
 
-  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-  import { app } from './firebase.js'; // Firebase初期化済みJS
-
-  const auth = getAuth(app);
-
-  function logout() {
-    signOut(auth)
-      .then(() => {
-        console.log("ログアウト成功");
-        sessionStorage.clear(); // セッション情報削除
+    // Logout
+    logoutBtn.addEventListener('click', () => {
+      signOut(auth).then(() => {
+        sessionStorage.clear();
+        localStorage.clear();
         window.location.href = "index.html";
-      })
-      .catch((error) => {
+      }).catch((error) => {
         console.error("ログアウト失敗:", error);
+        alert("ログアウトに失敗しました。");
       });
-  }
-
-  window.logout = logout;
+    });
   </script>
 </body>
 </html>

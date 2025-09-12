@@ -4,305 +4,161 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>サポートページ - お問い合わせ & チャット</title>
+<link rel="stylesheet" href="style.css">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap');
   body {
-    margin: 0; padding: 0;
     font-family: 'Noto Sans JP', sans-serif;
-    background: #f0faf7;
-    color: #23523a;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
+    background: #f0f2f5;
   }
-  header {
-    background: #a3d9c1;
-    padding: 1.5rem;
-    text-align: center;
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #0c3e24;
-    box-shadow: 0 2px 6px rgb(163 217 193 / 0.5);
+  .container {
+    max-width: 1200px;
   }
   main {
-    flex: 1;
-    max-width: 960px;
-    margin: 2rem auto 3rem;
-    padding: 0 1rem;
     display: flex;
     gap: 3rem;
     flex-wrap: wrap;
     justify-content: center;
+    padding: 20px 0;
   }
   section {
     background: white;
     border-radius: 12px;
     padding: 2rem;
-    box-shadow: 0 4px 12px rgb(163 217 193 / 0.25);
-    flex: 1 1 350px;
-    max-width: 450px;
-    opacity: 0;
-    transform: translateY(30px);
-    transition: opacity 0.7s ease, transform 0.7s ease;
-  }
-  section.visible {
-    opacity: 1;
-    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    flex: 1 1 400px;
+    max-width: 550px;
   }
   h2 {
     margin-top: 0;
     font-weight: 700;
-    color: #1a4b31;
+    color: #1c1e21;
     margin-bottom: 1.2rem;
-    border-bottom: 2px solid #a3d9c1;
-    padding-bottom: 0.3rem;
+    border-bottom: 2px solid #e7f3ff;
+    padding-bottom: 0.5rem;
   }
-  form label {
-    display: block;
-    margin-bottom: 0.2rem;
-    font-weight: 600;
-  }
+
+  /* Form styles */
+  form label { display: block; margin-bottom: 0.3rem; font-weight: 600; }
   form input[type="text"],
   form input[type="email"],
   form textarea {
     width: 100%;
-    padding: 0.5rem 0.6rem;
+    padding: 10px;
     margin-bottom: 1.2rem;
-    border: 1.8px solid #a3d9c1;
-    border-radius: 8px;
+    border: 1px solid #dddfe2;
+    border-radius: 6px;
     font-size: 1rem;
-    transition: border-color 0.3s ease;
-    resize: vertical;
   }
-  form input[type="text"]:focus,
-  form input[type="email"]:focus,
-  form textarea:focus {
-    outline: none;
-    border-color: #56b68b;
-    box-shadow: 0 0 6px #56b68baa;
-  }
-  button {
-    background: #56b68b;
-    border: none;
-    padding: 0.7rem 1.4rem;
-    border-radius: 30px;
-    color: white;
-    font-weight: 700;
-    font-size: 1.1rem;
-    cursor: pointer;
-    transition:
-      background-color 0.3s ease,
-      transform 0.15s ease;
-    user-select: none;
-    display: inline-block;
-  }
-  button:hover,
-  button:focus {
-    background: #3f7a58;
-    transform: scale(1.05);
-  }
-  .form-bounce {
-    animation: bounce 0.5s ease forwards;
-  }
-  @keyframes bounce {
-    0%   { transform: translateY(0); }
-    30%  { transform: translateY(-10px); }
-    50%  { transform: translateY(0); }
-    70%  { transform: translateY(-6px); }
-    100% { transform: translateY(0); }
-  }
+  form textarea { resize: vertical; min-height: 120px; }
 
   /* Chat styles */
-  #chatWindow {
-    border: 1.6px solid #a3d9c1;
-    border-radius: 8px;
-    height: 320px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    background: #e6f2ea;
-  }
-  #messages {
-    flex: 1;
-    padding: 0.8rem 1rem;
-    overflow-y: auto;
-    font-size: 0.9rem;
-  }
-  #messages .msg {
-    margin-bottom: 0.7rem;
-    padding: 0.45rem 0.7rem;
-    border-radius: 12px;
-    background: #cde6d6;
-    max-width: 80%;
-    word-wrap: break-word;
-  }
-  #messages .msg.self {
-    background: #a3d9c1;
-    color: white;
-    align-self: flex-end;
-  }
-  #chatInputArea {
-    border-top: 1.6px solid #a3d9c1;
-    padding: 0.7rem 1rem;
-    background: #d9ede1;
-    display: flex;
-    gap: 0.6rem;
-  }
-  #chatInput {
-    flex: 1;
-    border-radius: 20px;
-    border: 1.5px solid #a3d9c1;
-    padding: 0.5rem 1rem;
-    font-size: 1rem;
-  }
-  #chatSendBtn {
-    background: #56b68b;
-    border: none;
-    border-radius: 20px;
-    padding: 0 1.2rem;
-    color: white;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  #chatSendBtn:hover {
-    background: #3f7a58;
-  }
-
-  /* Responsive */
-  @media (max-width: 760px) {
-    main {
-      flex-direction: column;
-      gap: 2rem;
-      margin: 1rem auto 2rem;
-    }
-    section {
-      max-width: 100%;
-    }
-  }
+  #chatWindow { border: 1px solid #dddfe2; border-radius: 8px; height: 350px; display: flex; flex-direction: column; overflow: hidden; background: #f0f2f5; }
+  #messages { flex: 1; padding: 1rem; overflow-y: auto; }
+  #messages .msg { margin-bottom: 0.8rem; padding: 0.6rem 1rem; border-radius: 18px; background: #e7f3ff; max-width: 85%; word-wrap: break-word; }
+  #messages .msg.self { background: #4267B2; color: white; align-self: flex-end; }
+  #chatForm { border-top: 1px solid #dddfe2; padding: 0.8rem; background: #fff; display: flex; gap: 0.8rem; }
+  #chatInput { flex: 1; border-radius: 18px; border: 1px solid #dddfe2; padding: 0.6rem 1rem; font-size: 1rem; }
+  #chatSendBtn { border-radius: 18px; padding: 0 1.5rem; font-weight: 700; }
 </style>
 </head>
 <body>
 
-<header>サポートページ (プレミアムユーザー優先で対応しているため、対応に時間がかかる場合があります)</header>
+<div class="container">
+  <header>
+      <h1>サポート</h1>
+      <a href="index.html">戻る</a>
+  </header>
+  <p style="text-align: center; color: #555;">プレミアムユーザーからのお問い合わせを優先的に対応しております。通常のお問い合わせにはお時間がかかる場合がございます。</p>
 
-<main>
-  <section id="contactFormSection" aria-label="お問い合わせフォーム">
-    <h2>お問い合わせフォーム</h2>
-    <form id="contactForm" novalidate>
-      <label for="name">お名前 <span aria-hidden="true" style="color:#cc0000;">*</span></label>
-      <input type="text" id="name" name="name" required minlength="2" placeholder="例：山田 太郎" />
-
-      <label for="email">メールアドレス <span aria-hidden="true" style="color:#cc0000;">*</span></label>
-      <input type="email" id="email" name="email" required placeholder="example@example.com" />
-
-      <label for="subject">件名 <span aria-hidden="true" style="color:#cc0000;">*</span></label>
-      <input type="text" id="subject" name="subject" required minlength="4" placeholder="お問い合わせの件名" />
-
-      <label for="message">メッセージ <span aria-hidden="true" style="color:#cc0000;">*</span></label>
-      <textarea id="message" name="message" rows="6" required minlength="10" placeholder="お問い合わせ内容を詳しくご記入ください"></textarea>
-
-      <button type="submit" aria-label="お問い合わせを送信する">送信する</button>
-      <p id="formStatus" role="alert" aria-live="polite" style="margin-top:0.8rem;"></p>
-    </form>
-  </section>
-
-  <section id="chatSection" aria-label="サポートチャット">
-    <h2>ライブチャット</h2>
-    <div id="chatWindow" role="log" aria-live="polite" aria-relevant="additions">
-      <div id="messages"></div>
-      <form id="chatForm" autocomplete="off" aria-label="チャットメッセージ送信フォーム" style="display:flex;">
-        <input type="text" id="chatInput" placeholder="メッセージを入力..." aria-required="true" />
-        <button type="submit" id="chatSendBtn" aria-label="チャットメッセージ送信">送信</button>
+  <main>
+    <section id="contactFormSection">
+      <h2>お問い合わせフォーム</h2>
+      <form id="contactForm" novalidate>
+        <label for="name">お名前 *</label>
+        <input type="text" id="name" name="name" required placeholder="山田 太郎" />
+        <label for="email">メールアドレス *</label>
+        <input type="email" id="email" name="email" required placeholder="your@email.com" />
+        <label for="subject">件名 *</label>
+        <input type="text" id="subject" name="subject" required placeholder="お問い合わせの件名" />
+        <label for="message">メッセージ *</label>
+        <textarea id="message" name="message" rows="5" required placeholder="お問い合わせ内容をご記入ください"></textarea>
+        <button type="submit">送信</button>
+        <p id="formStatus" role="alert" aria-live="polite" style="margin-top:1rem;"></p>
       </form>
-    </div>
-  </section>
-</main>
+    </section>
 
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-<script>
-  // Firebase初期設定（自分のプロジェクト情報に差し替えてください）
+    <section id="chatSection">
+      <h2>ライブチャット</h2>
+      <div id="chatWindow" role="log">
+        <div id="messages"></div>
+        <form id="chatForm" autocomplete="off">
+          <input type="text" id="chatInput" placeholder="メッセージを入力..." required />
+          <button type="submit" id="chatSendBtn">送信</button>
+        </form>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
   const firebaseConfig = {
-    apiKey: "AIzaSyA7CWUhLBKG_Oabxxw_7RfBpSANUoDh42s",
-    authDomain: "moodmirror-login.firebaseapp.com",
-    databaseURL: "https://moodmirror-login-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "moodmirror-login",
-    storageBucket: "moodmirror-login.firebasestorage.app",
-    messagingSenderId: "1091670187554",
-    appId: "1:1091670187554:web:ce919c1fca5b660995b47b",
-    measurementId: "G-TPJXPMPSGZ"
+      apiKey: "AIzaSyA7CWUhLBKG_Oabxxw_7RfBpSANUoDh42s",
+      authDomain: "moodmirror-login.firebaseapp.com",
+      projectId: "moodmirror-login",
+      storageBucket: "moodmirror-login.firebasestorage.app",
+      messagingSenderId: "1091670187554",
+      appId: "1:1091670187554:web:ce919c1fca5b660995b47b",
   };
 
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-  // --- お問い合わせフォーム処理 ---
+  // --- Contact Form ---
   const contactForm = document.getElementById('contactForm');
   const formStatus = document.getElementById('formStatus');
   contactForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    formStatus.textContent = '';
-    if (!contactForm.reportValidity()) {
+    if (!contactForm.checkValidity()) {
       formStatus.textContent = '必須項目を正しく入力してください。';
       formStatus.style.color = '#cc0000';
       return;
     }
-    // 入力値取得
-    const name = contactForm.name.value.trim();
-    const email = contactForm.email.value.trim();
-    const subject = contactForm.subject.value.trim();
-    const message = contactForm.message.value.trim();
-
+    const formData = new FormData(contactForm);
     try {
-      // Firestoreに問い合わせを送信（コレクション名: supportRequests）
-      await db.collection('supportRequests').add({
-        name,
-        email,
-        subject,
-        message,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      await addDoc(collection(db, 'supportRequests'), {
+        name: formData.get('name'),
+        email: formData.get('email'),
+        subject: formData.get('subject'),
+        message: formData.get('message'),
+        createdAt: serverTimestamp()
       });
-      formStatus.textContent = '送信が完了しました。ありがとうございます！';
-      formStatus.style.color = '#23523a';
+      formStatus.textContent = '送信完了しました。ありがとうございます！';
+      formStatus.style.color = 'green';
       contactForm.reset();
-      contactForm.classList.add('form-bounce');
-      setTimeout(() => contactForm.classList.remove('form-bounce'), 600);
     } catch (error) {
-      formStatus.textContent = '送信中にエラーが発生しました。時間をおいて再度お試しください。';
+      formStatus.textContent = '送信エラーが発生しました。';
       formStatus.style.color = '#cc0000';
-      console.error(error);
+      console.error("Error adding document: ", error);
     }
   });
 
-  // --- スクロール時フェードイン ---
-  const fadeTargets = [document.getElementById('contactFormSection'), document.getElementById('chatSection')];
-  function onScrollFade() {
-    const triggerBottom = window.innerHeight * 0.85;
-    fadeTargets.forEach(section => {
-      const rect = section.getBoundingClientRect();
-      if (rect.top < triggerBottom) {
-        section.classList.add('visible');
-      }
-    });
-  }
-  window.addEventListener('scroll', onScrollFade);
-  window.addEventListener('load', onScrollFade);
-
-  // --- チャット処理 ---
+  // --- Chat ---
   const messagesEl = document.getElementById('messages');
   const chatForm = document.getElementById('chatForm');
   const chatInput = document.getElementById('chatInput');
 
-  // FirestoreのsupportChatコレクションからリアルタイムで取得
-  db.collection('supportChat').orderBy('createdAt').limit(100).onSnapshot(snapshot => {
+  const q = query(collection(db, "supportChat"), orderBy("createdAt", "desc"), limit(50));
+  onSnapshot(q, (querySnapshot) => {
     messagesEl.innerHTML = '';
-    snapshot.forEach(doc => {
+    const docs = querySnapshot.docs.reverse(); // Newest at the bottom
+    docs.forEach((doc) => {
       const data = doc.data();
       const msgDiv = document.createElement('div');
       msgDiv.classList.add('msg');
-      // 自分のメッセージかどうかは仮で判別（ここでは常に相手のメッセージ風）
-      // 本格的には認証ユーザーIDと照合など実装が必要
       msgDiv.textContent = data.name ? `${data.name}: ${data.text}` : data.text;
       messagesEl.appendChild(msgDiv);
     });
@@ -314,18 +170,16 @@
     const text = chatInput.value.trim();
     if (!text) return;
     try {
-      await db.collection('supportChat').add({
+      await addDoc(collection(db, 'supportChat'), {
         text,
         name: "匿名ユーザー",
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        createdAt: serverTimestamp()
       });
       chatInput.value = '';
     } catch (error) {
-      alert('メッセージ送信に失敗しました。');
-      console.error(error);
+      console.error("Error sending message: ", error);
     }
   });
-
 </script>
 
 </body>
