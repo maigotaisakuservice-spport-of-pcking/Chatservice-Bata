@@ -108,6 +108,7 @@
      <a href="profile.html">プロフィールページへ</a>
     <a class="menu-button" href="group.html">🌐 グループチャット</a>
     <a href="premiumlist.html">プレミアム会員限定ページへ</a>
+    <button id="create-temp-chat-btn" class="menu-button" style="display:none; font-size: 16px; padding: 8px 12px; background-color: #ff9800; border-radius: 5px;">🤫 一時チャット作成</button>
     <button class="menu-button" onclick="toggleMenu()">≡</button>
     <div class="menu" id="menu">
       <input type="email" id="friend-email" placeholder="メールで検索">
@@ -118,134 +119,35 @@
 
   <main id="chat-area">
   <div id="messages"></div>
-    <form id="message-form" onsubmit="sendMessage(event)">
+    <div id="emoji-picker" style="display: none; border: 1px solid #ccc; padding: 10px; margin-top: 10px; background: white; border-radius: 8px; position: absolute; bottom: 60px;">
+      <!-- Emojis will be populated here by script -->
+    </div>
+    <form id="message-form">
+      <button type="button" id="emoji-button" style="display: none; background: none; border: none; font-size: 24px; cursor: pointer; padding: 0 10px;">😀</button>
       <input type="text" id="message-input" placeholder="メッセージを入力">
-      <button id="send-button">送信</button>
+      <button id="send-button" type="submit">送信</button>
     </form>
     <!-- 画像送信用フォーム -->
-<form id="image-form">
-  <input type="file" id="image-input" accept="image/*" />
-  <button type="submit">画像送信</button>
-</form>
+    <form id="image-form">
+      <input type="file" id="image-input" accept="image/*" />
+      <button type="submit">画像送信</button>
+    </form>
     <!-- 動画アップロードフォーム -->
-<form id="video-form">
-  <input type="file" id="video-input" accept="video/mp4,video/webm" />
-  <button type="submit">動画を送信</button>
-</form>
+    <form id="video-form">
+      <input type="file" id="video-input" accept="video/mp4,video/webm" />
+      <button type="submit">動画を送信</button>
+    </form>
 
     <!-- GIF表示エリア（Premiumのみ表示） -->
-<div id="gif-ui" style="display:none;">
-  <h3>🎞️ プレミアムGIF特典</h3>
-  <div id="gif-library" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
-  <h4>🎨 カスタムGIF（最大3つ）</h4>
-  <input type="file" id="custom-gif-upload" accept="image/gif" />
-  <div id="custom-gif-list" style="display:flex; gap:10px;"></div>
-</div>
+    <div id="gif-ui" style="display:none;">
+      <h3>🎞️ プレミアムGIF特典</h3>
+      <div id="gif-library" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
+      <h4>🎨 カスタムGIF（最大3つ）</h4>
+      <input type="file" id="custom-gif-upload" accept="image/gif" />
+      <div id="custom-gif-list" style="display:flex; gap:10px;"></div>
+    </div>
     
   </main>
   <script type="module" src="chat.js"></script>
-  <script>
-    // Premiumユーザー判定
-    let isPremiumUser = false;
-
-// 認証後などに実行（すでにauthが初期化されている想定）
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    const premiumRef = ref(db, `users/${user.uid}/premium`);
-    const snapshot = await get(premiumRef);
-    isPremiumUser = snapshot.exists() && snapshot.val() === true;
-
-    if (isPremiumUser) {
-      document.getElementById("gif-ui").style.display = "block";
-      loadGifLibrary();
-      loadCustomGifs();
-    }
-  }
-});
-
-    // GifUI表示　Premiumユーザーのみ
-    const GIF_LIMIT_PER_MONTH = 5;
-const CUSTOM_GIF_LIMIT = 3;
-const GIF_STORAGE_KEY = "customGifs";
-
-// 外部GIF一覧読み込み
-function loadGifLibrary() {
-  const gifUrls = [
-    "https://chatmaga.f5.si/gif/1.gif",
-    "https://chatmaga.f5.si/gif/2.gif",
-    "https://chatmaga.f5.si/gif/3.gif"
-    // 必要に応じて増やす
-  ];
-  const gifContainer = document.getElementById("gif-library");
-  gifContainer.innerHTML = "";
-
-  gifUrls.forEach(url => {
-    const img = document.createElement("img");
-    img.src = url;
-    img.style.width = "80px";
-    img.style.cursor = "pointer";
-    img.onclick = () => sendGif(url);
-    gifContainer.appendChild(img);
-  });
-}
-
-// GIF送信処理（上限付き）
-async function sendGif(url) {
-  if (!isPremiumUser || !currentUser || !currentChatId) return;
-
-  const month = new Date().toISOString().slice(0, 7);
-  const limitRef = ref(db, `gifLimits/${currentUser.uid}/${month}`);
-  const snap = await get(limitRef);
-  const count = snap.exists() ? snap.val() : 0;
-
-  if (count >= GIF_LIMIT_PER_MONTH) {
-    alert("今月のGIF送信上限に達しました（5個まで）");
-    return;
-  }
-
-  const messagesRef = ref(db, `chats/${currentChatId}/messages`);
-  await push(messagesRef, {
-    type: "gif",
-    gifUrl: url,
-    sender: currentUser.uid,
-    timestamp: Date.now()
-  });
-
-  // 送信数カウントアップ
-  set(limitRef, count + 1);
-}
-
-// カスタムGIF追加（IndexedDB → localStorageで代用）
-document.getElementById("custom-gif-upload").addEventListener("change", function () {
-  const file = this.files[0];
-  if (!file || file.type !== "image/gif") return alert("GIF画像のみアップロード可能です");
-
-  const reader = new FileReader();
-  reader.onload = function () {
-    let gifs = JSON.parse(localStorage.getItem(GIF_STORAGE_KEY) || "[]");
-    if (gifs.length >= CUSTOM_GIF_LIMIT) return alert("カスタムGIFは3つまでです");
-
-    gifs.push(reader.result);
-    localStorage.setItem(GIF_STORAGE_KEY, JSON.stringify(gifs));
-    loadCustomGifs();
-  };
-  reader.readAsDataURL(file);
-});
-
-// カスタムGIF表示と送信
-function loadCustomGifs() {
-  const gifs = JSON.parse(localStorage.getItem(GIF_STORAGE_KEY) || "[]");
-  const container = document.getElementById("custom-gif-list");
-  container.innerHTML = "";
-  gifs.forEach(base64 => {
-    const img = document.createElement("img");
-    img.src = base64;
-    img.style.width = "80px";
-    img.style.cursor = "pointer";
-    img.onclick = () => sendGif(base64); // 同じく送信処理
-    container.appendChild(img);
-  });
-}
-  </script>
 </body>
 </html>
