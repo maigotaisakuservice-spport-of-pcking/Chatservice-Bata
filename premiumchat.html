@@ -20,7 +20,14 @@
     <div id="chat-area">
       <h2>プレミアムグループチャット</h2>
       <div id="messages"></div>
-      <form id="send-form"><input id="message-input" style="flex:1" autocomplete="off"/><button>送信</button></form>
+      <div id="emoji-picker" style="display: none; border: 1px solid #ccc; padding: 10px; background: white; border-radius: 8px; position: absolute; bottom: 60px; right: 20px;">
+        <!-- Emojis will be populated here -->
+      </div>
+      <form id="send-form" style="position: relative;">
+        <button type="button" id="emoji-button" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 0 10px;">😀</button>
+        <input id="message-input" style="flex:1" autocomplete="off"/>
+        <button type="submit">送信</button>
+      </form>
     </div>
     <div id="call-area">
       <h2>グループ通話</h2>
@@ -37,6 +44,16 @@
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
     import { getFirestore, collection, doc, addDoc, onSnapshot, getDoc, setDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
     import { playIntroVideo } from './intro_video.js';
+
+    // --- Emojis ---
+    const EMOJIS = {
+        '::smile::': '/emoji/smile.png',
+        '::laugh::': '/emoji/laugh.png',
+        '::sad::': '/emoji/sad.png',
+        '::angry::': '/emoji/angry.png',
+        '::thumbup::': '/emoji/thumbup.png',
+        '::heart::': '/emoji/heart.png',
+    };
 
     function initApp() {
         const firebaseConfig = {
@@ -61,6 +78,8 @@
         const messageInput = document.getElementById('message-input');
         const startCallBtn = document.getElementById('start-call-btn');
         const leaveCallBtn = document.getElementById('leave-call-btn');
+        const emojiButton = document.getElementById('emoji-button');
+        const emojiPicker = document.getElementById('emoji-picker');
 
         onAuthStateChanged(auth, async (user) => {
             if (!user) { window.location.href = "index.html"; return; }
@@ -71,21 +90,53 @@
                 window.location.href = "chat.html";
                 return;
             }
-            listenMessages(db, currentChatId, messagesDiv);
+
+            // If premium, initialize UI features
+            populateEmojiPicker();
+            emojiButton.addEventListener('click', () => {
+                emojiPicker.style.display = emojiPicker.style.display === 'none' ? 'block' : 'none';
+            });
+
+            listenMessages(db, currentChatId, messagesDiv, currentUser.uid);
             sendForm.addEventListener("submit", (e) => sendMessage(e, db, currentUser, currentChatId, messageInput));
             startCallBtn.addEventListener("click", () => startCall(db, currentUser, currentChatId, localStream, peers, iceConfig));
             leaveCallBtn.addEventListener("click", () => leaveCall(db, currentUser, currentChatId, localStream, peers));
         });
     }
 
-    function listenMessages(db, chatId, messagesDiv) {
+    function populateEmojiPicker() {
+        const picker = document.getElementById('emoji-picker');
+        picker.innerHTML = '';
+        for (const code in EMOJIS) {
+            const img = document.createElement('img');
+            img.src = EMOJIS[code];
+            img.alt = code;
+            img.style.width = '30px';
+            img.style.cursor = 'pointer';
+            img.style.margin = '5px';
+            img.addEventListener('click', () => {
+                document.getElementById('message-input').value += ` ${code} `;
+            });
+            picker.appendChild(img);
+        }
+    }
+
+    function listenMessages(db, chatId, messagesDiv, currentUserId) {
         const q = query(collection(db, "premium_chats", chatId, "messages"), orderBy("timestamp"));
         onSnapshot(q, (snapshot) => {
             messagesDiv.innerHTML = '';
             snapshot.forEach(doc => {
                 const msg = doc.data();
                 const div = document.createElement('div');
-                div.textContent = `${msg.senderName || '名無し'}: ${msg.text}`;
+
+                let content = msg.text;
+                // Replace emoji codes with images
+                Object.keys(EMOJIS).forEach(code => {
+                    const imgTag = `<img src="${EMOJIS[code]}" alt="${code}" style="width: 20px; height: 20px; vertical-align: middle;">`;
+                    content = content.split(code).join(imgTag);
+                });
+
+                div.innerHTML = `${msg.senderName || '名無し'}: ${content}`;
                 messagesDiv.appendChild(div);
             });
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -103,6 +154,7 @@
             timestamp: new Date()
         });
         input.value = "";
+        document.getElementById('emoji-picker').style.display = 'none';
     }
 
     async function startCall(db, user, chatId, stream, peers, config) {

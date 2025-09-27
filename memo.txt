@@ -1,0 +1,107 @@
+# Firebase Security Rules Memo
+
+## Firebase Realtime Database (for chat.html)
+
+These rules are for the standard chat functionality. They ensure that only authenticated users can access chat data and that they can only write messages with the correct structure and sender ID.
+
+```json
+{
+  "rules": {
+    // Users can only read/write if they are authenticated
+    ".read": "auth != null",
+    ".write": "auth != null",
+
+    "users": {
+      "$uid": {
+        // A user can only write to their own profile data
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+
+    "chats": {
+      "$chatId": {
+        "messages": {
+          // Allow read access to all authenticated users in the chat
+          ".read": true,
+          "$messageId": {
+            // Validate new messages
+            ".write": "newData.child('sender').val() === auth.uid && newData.hasChildren(['sender', 'text', 'timestamp'])",
+            // Validate the data types
+            "sender": { ".validate": "newData.isString()" },
+            "text": { ".validate": "newData.isString() && newData.val().length > 0" },
+            "timestamp": { ".validate": "newData.isNumber()" },
+            "isRead": { ".validate": "newData.isBoolean()" },
+            "$other": { ".validate": false }
+          }
+        }
+      }
+    },
+
+    "gifLimits": {
+      "$uid": {
+        // A user can only write to their own GIF limit counter
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    }
+  }
+}
+```
+
+## Cloud Firestore (for premium features, user data, and temporary chats)
+
+These rules manage access for the more complex features. They restrict access to premium content, protect user data, and secure the end-to-end encrypted temporary chats.
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check for a valid, active premium plan
+    function isPremium(userId) {
+      let userData = get(/databases/$(database)/documents/users/$(userId)).data;
+      return userData.premium != null &&
+             (userData.premium.expiresAt == null || userData.premium.expiresAt > request.time);
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // A user can read their own document.
+      allow read: if request.auth.uid == userId;
+      // A user can update their own document, but cannot change their premium status.
+      allow update: if request.auth.uid == userId && !("premium" in request.resource.data);
+      // Allow creation of a user document
+      allow create: if request.auth.uid == userId;
+    }
+
+    // Premium Chat (Group Chat)
+    match /premium_chats/{chatId}/{document=**} {
+      // Only premium users can read or write to the premium chat
+      allow read, write: if isPremium(request.auth.uid);
+    }
+
+    // Premium Calls (WebRTC signaling)
+    match /premium_calls/{callId}/{document=**} {
+        // Only premium users can participate in calls
+        allow read, write: if isPremium(request.auth.uid);
+    }
+
+    // Temporary Chats
+    match /temporary_chats/{chatId} {
+      // Allow a logged-in user to create a new temporary chat
+      allow create: if request.auth.uid != null;
+
+      // Allow read/update only if the user is a participant
+      allow read, update: if request.auth.uid in resource.data.participants;
+
+      // Allow deletion only by participants
+      allow delete: if request.auth.uid in resource.data.participants;
+
+      // Messages subcollection
+      match /messages/{messageId} {
+        // Allow read/write only by participants of the parent chat
+        allow read, write: if request.auth.uid in get(/databases/$(database)/documents/temporary_chats/$(chatId)).data.participants;
+      }
+    }
+  }
+}
+```
