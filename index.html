@@ -1,114 +1,3 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <title>ログイン - ChatGo</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .container {
-      background: rgba(255, 255, 255, 0.1);
-      padding: 2em 3em;
-      border-radius: 1.5em;
-      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-      backdrop-filter: blur(8.5px);
-      -webkit-backdrop-filter: blur(8.5px);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      text-align: center;
-    }
-    h1 {
-      font-size: 2.5em;
-      margin-bottom: 1em;
-      color: #fff;
-    }
-    input {
-      display: block;
-      margin-bottom: 1.5em;
-      padding: 0.8em;
-      width: 100%;
-      background: rgba(255, 255, 255, 0.2);
-      border: none;
-      border-radius: 0.8em;
-      color: #fff;
-      font-size: 1em;
-    }
-    input::placeholder {
-      color: rgba(255, 255, 255, 0.7);
-    }
-    button {
-      padding: 0.8em;
-      background-color: #8e44ad;
-      color: white;
-      border: none;
-      width: 100%;
-      border-radius: 0.8em;
-      cursor: pointer;
-      font-size: 1em;
-      transition: background-color 0.3s;
-    }
-    button:hover {
-      background-color: #9b59b6;
-    }
-    .google-btn {
-      background-color: #c0392b;
-      margin-top: 0.5em;
-    }
-    a {
-      color: #fff;
-      text-decoration: none;
-      margin-top: 1em;
-      display: inline-block;
-    }
-    a:hover {
-      text-decoration: underline;
-    }
-    .header-alert {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      background-color: #f1c40f;
-      padding: 10px;
-      text-align: center;
-    }
-    .header-alert-ptag {
-      color: #2c3e50;
-      margin: 0;
-    }
-  </style>
-</head>
-<body>
-  <header class="header-alert"><p class="header-alert-ptag">現在、チャットデータ保存先のサーバーが動作不良のため、データ処理制限を行っております。<br>ユーザーの皆様におきましては、なるべくページの再読み込みを最小限にしていただけると幸いです</p><a href="howto.html"><p><br>使い方の詳細はこちら</p></a></header>
-  
-  <div class="container">
-      <h1>ChatGo ログイン</h1>
-      <form id="loginForm">
-        <div id="email-password-section">
-            <input type="email" id="email" placeholder="メールアドレス" required>
-            <input type="password" id="password" placeholder="パスワード" required>
-            <button type="submit">ログイン</button>
-        </div>
-        <div id="recaptcha-container"></div>
-        <div id="mfa-container" style="display: none;">
-          <p>ご登録の電話番号にSMSを送信しました。</p>
-          <input type="text" id="mfa-code" placeholder="SMS認証コード">
-          <button type="button" id="mfa-submit">コードを送信してログイン</button>
-        </div>
-      </form>
-      <button type="button" class="google-btn" id="googleLogin">Googleでログイン</button>
-      <p><a href="reset.html">パスワードを忘れた場合</a></p>
-      <p><a href="register.html">新規登録はこちら</a></p>
-  </div>
-
 <script type="module">
     import { auth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "./app.js";
     import { RecaptchaVerifier, PhoneAuthProvider, getMultiFactorResolver, PhoneMultiFactorGenerator } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
@@ -116,41 +5,42 @@
     const loginForm = document.getElementById('loginForm');
     const emailPasswordSection = document.getElementById('email-password-section');
     const mfaContainer = document.getElementById('mfa-container');
-    let resolver = null;
+    const googleLoginBtn = document.getElementById('googleLogin');
 
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+    // Initialize reCAPTCHA
+    const recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
       'size': 'invisible'
     });
 
+    // Handle standard email/password and MFA login
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
+        const submitButton = loginForm.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
 
         try {
-            await signInWithEmailAndPassword(auth, email, password);
-            sessionStorage.setItem('userId', auth.currentUser.uid);
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            sessionStorage.setItem('userId', userCredential.user.uid);
             window.location.href = 'chat.html';
         } catch (error) {
             if (error.code === 'auth/multi-factor-auth-required') {
-                resolver = getMultiFactorResolver(auth, error);
-
-                // For simplicity, we'll use the first available second factor (phone).
+                const resolver = getMultiFactorResolver(auth, error);
                 const phoneInfo = resolver.hints.find(info => info.factorId === PhoneMultiFactorGenerator.FACTOR_ID);
                 if (!phoneInfo) {
-                    alert("電話番号によるMFAが見つかりませんでした。");
-                    return;
+                    return alert("電話による2段階認証が設定されていません。");
                 }
 
                 const phoneAuthProvider = new PhoneAuthProvider(auth);
-
                 try {
                     const verificationId = await phoneAuthProvider.verifyPhoneNumber(
                         { multiFactorHint: phoneInfo, session: resolver.session },
-                        window.recaptchaVerifier
+                        recaptchaVerifier
                     );
 
                     emailPasswordSection.style.display = 'none';
+                    googleLoginBtn.style.display = 'none'; // Hide Google button during MFA
                     mfaContainer.style.display = 'block';
 
                     document.getElementById('mfa-submit').onclick = async () => {
@@ -168,13 +58,25 @@
                     };
                 } catch (err) {
                     alert('SMSの送信に失敗しました: ' + err.message);
+                    recaptchaVerifier.render().then(widgetId => grecaptcha.reset(widgetId));
                 }
             } else {
-                alert("ログイン失敗：" + error.message);
+                alert("ログインに失敗しました: " + error.message);
             }
+        } finally {
+            submitButton.disabled = false;
+        }
+    });
+
+    // Handle Google Login
+    googleLoginBtn.addEventListener('click', async () => {
+        const provider = new GoogleAuthProvider();
+        try {
+            const result = await signInWithPopup(auth, provider);
+            sessionStorage.setItem('userId', result.user.uid);
+            window.location.href = 'chat.html';
+        } catch (error) {
+            alert("Googleログインに失敗しました: " + error.message);
         }
     });
 </script>
-      
-</body>
-</html>
