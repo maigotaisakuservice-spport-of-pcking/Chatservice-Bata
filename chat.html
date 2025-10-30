@@ -6,99 +6,136 @@
   <style>
     body {
       margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f0f0f0;
+      font-family: 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+      background: #f5f7fa;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
     }
 
     header {
-      background-color: #2e7d32;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      padding: 10px 20px;
+      padding: 15px 30px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    header a, header h1 {
+      color: white;
+      text-decoration: none;
+      margin: 0;
     }
 
     .menu-button {
-      font-size: 24px;
+      font-size: 28px;
       background: none;
       border: none;
       color: white;
       cursor: pointer;
+      padding: 5px;
     }
 
     .menu {
+      display: none; /* Initially hidden */
       position: absolute;
-      top: 50px;
+      top: 70px;
       right: 20px;
       background-color: white;
-      border: 1px solid #ccc;
-      width: 250px;
-      flex-direction: column;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      width: 280px;
       z-index: 1000;
-      padding: 10px;
+      padding: 15px;
+    }
+    .menu.active {
+        display: block;
     }
 
     .menu input {
-      width: calc(100% - 20px);
+      width: calc(100% - 30px);
       margin-bottom: 10px;
-      padding: 5px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
     }
 
     .menu button {
-      background-color: #4caf50;
+      background-color: #8e44ad;
       color: white;
       border: none;
-      padding: 5px;
-      margin-bottom: 5px;
+      padding: 10px;
+      width: 100%;
+      border-radius: 8px;
       cursor: pointer;
     }
 
     #chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
       padding: 20px;
-    }
-
-    .friend-list {
-      margin-top: 10px;
-    }
-
-    .friend-item {
-      cursor: pointer;
-      padding: 4px;
-      border-bottom: 1px solid #ccc;
-    }
-
-    .friend-item:hover {
-      background-color: #e0e0e0;
+      overflow-y: hidden;
     }
 
     #messages {
-      min-height: 300px;
-      max-height: 400px;
+      flex: 1;
       overflow-y: auto;
       background: #fff;
-      display: block !important;
-      overflow-y: auto;
-      max-height: 300px;
-      padding: 10px;
-      border: 1px solid #ccc;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #e0e0e0;
+      margin-bottom: 20px;
     }
 
     #message-form {
       display: flex;
-      margin-top: 10px;
+      box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+      background: #fff;
+      padding: 15px;
+      border-radius: 12px;
     }
 
     #message-input {
       flex: 1;
-      padding: 8px;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1em;
     }
 
     #send-button {
-      padding: 8px 16px;
-      background-color: #2e7d32;
+      padding: 12px 20px;
+      background-color: #8e44ad;
       color: white;
       border: none;
+      border-radius: 8px;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+
+    .form-container {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-top: 10px;
+    }
+
+    .form-container input[type="file"] {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 5px;
+    }
+
+    .form-container button {
+        background-color: #8e44ad;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
     }
   </style>
 </head>
@@ -122,16 +159,19 @@
       <input type="text" id="message-input" placeholder="メッセージを入力">
       <button id="send-button">送信</button>
     </form>
-    <!-- 画像送信用フォーム -->
-<form id="image-form">
-  <input type="file" id="image-input" accept="image/*" />
-  <button type="submit">画像送信</button>
-</form>
-    <!-- 動画アップロードフォーム -->
-<form id="video-form">
-  <input type="file" id="video-input" accept="video/mp4,video/webm" />
-  <button type="submit">動画を送信</button>
-</form>
+
+    <div class="form-container">
+        <!-- 画像送信用フォーム -->
+        <form id="image-form">
+          <input type="file" id="image-input" accept="image/*" />
+          <button type="submit">画像送信</button>
+        </form>
+        <!-- 動画アップロードフォーム -->
+        <form id="video-form">
+          <input type="file" id="video-input" accept="video/mp4,video/webm" />
+          <button type="submit">動画を送信</button>
+        </form>
+    </div>
 
     <!-- GIF表示エリア（Premiumのみ表示） -->
 <div id="gif-ui" style="display:none;">

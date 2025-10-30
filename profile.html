@@ -6,48 +6,81 @@
   <title>ChatGo - プロフィール</title>
   <style>
     body {
-      font-family: sans-serif;
+      font-family: 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
       margin: 0;
-      background-color: white;
-      color: black;
-      transition: 0.3s;
+      background: #f5f7fa;
+      color: #333;
+      transition: background-color 0.3s, color 0.3s;
     }
     .dark {
-      background-color: #121212;
-      color: white;
+      background-color: #1f2023;
+      color: #f1f1f1;
     }
     header {
-      background-color: #4CAF50;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      padding: 1em;
+      padding: 15px 30px;
       text-align: center;
+      position: relative;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     .container {
       padding: 2em;
-      max-width: 400px;
-      margin: auto;
+      max-width: 450px;
+      margin: 2em auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    }
+    .dark .container {
+        background: #2a2b2f;
+    }
+    h2 {
+      text-align: center;
+      color: #8e44ad;
     }
     label {
       display: block;
-      margin-top: 1em;
+      margin-top: 1.5em;
+      font-weight: 600;
     }
     input {
       width: 100%;
-      padding: 0.5em;
+      padding: 0.8em;
       margin-top: 0.5em;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    .dark input {
+        background: #333;
+        color: #f1f1f1;
+        border-color: #555;
     }
     button {
-      margin-top: 1em;
-      padding: 0.5em 1em;
-      background: #4CAF50;
+      margin-top: 1.5em;
+      padding: 0.8em 1.2em;
+      background: #8e44ad;
       color: white;
       border: none;
+      border-radius: 8px;
       cursor: pointer;
+      width: 100%;
+      font-size: 1em;
     }
     #toggleMode {
       position: absolute;
-      right: 1em;
-      top: 1em;
+      right: 1.5em;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.2);
+      padding: 5px 10px;
+    }
+    a {
+        display: block;
+        text-align: center;
+        margin-top: 1em;
+        color: #8e44ad;
+        text-decoration: none;
     }
   </style>
 </head>
@@ -68,7 +101,8 @@
   </div>
 
   <script type="module">
-    import { auth, db, ref, onAuthStateChanged, set, get, child } from './app.js';
+    import { auth, db_firestore, doc, getDoc, setDoc, signOut } from './app.js';
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
 
     const emailSpan = document.getElementById('userEmail');
     const displayNameInput = document.getElementById('displayName');
@@ -86,12 +120,13 @@
     });
 
     onAuthStateChanged(auth, async (user) => {
-      if (!user) return window.location.href = 'login.html';
+      if (!user) return window.location.href = 'index.html';
       emailSpan.textContent = user.email;
 
-      const snap = await get(child(ref(db), `users/${user.uid}`));
-      if (snap.exists()) {
-        const data = snap.val();
+      const userRef = doc(db_firestore, `users/${user.uid}`);
+      const docSnap = await getDoc(userRef);
+      if (docSnap.exists()) {
+        const data = docSnap.val();
         displayNameInput.value = data.displayName || '';
       }
     });
@@ -99,31 +134,22 @@
     saveBtn.addEventListener('click', async () => {
       const name = displayNameInput.value;
       const uid = auth.currentUser.uid;
-      await set(ref(db, `users/${uid}`), {
+      const userRef = doc(db_firestore, `users/${uid}`);
+      await setDoc(userRef, {
         email: auth.currentUser.email,
         displayName: name
-      });
+      }, { merge: true }); // Use merge to avoid overwriting other fields like publicKey
       alert('保存しました');
     });
 
-  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-  import { app } from './firebase.js'; // Firebase初期化済みJS
-
-  const auth = getAuth(app);
-
-  function logout() {
-    signOut(auth)
-      .then(() => {
-        console.log("ログアウト成功");
-        sessionStorage.clear(); // セッション情報削除
-        window.location.href = "index.html";
-      })
-      .catch((error) => {
-        console.error("ログアウト失敗:", error);
-      });
-  }
-
-  window.logout = logout;
+    logoutBtn.addEventListener('click', () => {
+        signOut(auth).then(() => {
+            sessionStorage.clear();
+            window.location.href = "index.html";
+        }).catch((error) => {
+            console.error("ログアウト失敗:", error);
+        });
+    });
   </script>
 </body>
 </html>
