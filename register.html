@@ -4,8 +4,59 @@
   <meta charset="UTF-8">
   <title>ChatGo - 新規登録</title>
   <style>
-    /* ... existing styles ... */
-    .hidden { display: none; }
+    body {
+        font-family: 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+    }
+    .container {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 2em 3em;
+        border-radius: 1.5em;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        backdrop-filter: blur(8.5px);
+        -webkit-backdrop-filter: blur(8.5px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        text-align: center;
+        width: 400px;
+    }
+    h2 {
+        font-size: 2em;
+        margin-bottom: 1em;
+    }
+    input {
+        display: block;
+        margin-bottom: 1.5em;
+        padding: 0.8em;
+        width: 100%;
+        box-sizing: border-box;
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        border-radius: 0.8em;
+        color: #fff;
+    }
+    button {
+        padding: 0.8em;
+        background-color: #8e44ad;
+        color: white;
+        border: none;
+        border-radius: 0.8em;
+        cursor: pointer;
+        width: 100%;
+        margin-bottom: 1em;
+    }
+    .google-btn {
+        background-color: #c0392b;
+    }
+    .hidden {
+        display: none;
+    }
   </style>
 </head>
 <body>
@@ -33,12 +84,19 @@
   </form>
 
   <button class="google-btn" id="googleSignUp">Googleで登録</button>
-  <a href="terms-of-service.html"><p>利用規約 (必ずお読みください)</p></a>
 </div>
 
 <script type="module">
     import { auth, db } from './app.js';
-    import { createUserWithEmailAndPassword, RecaptchaVerifier, PhoneAuthProvider, multiFactor, PhoneMultiFactorGenerator, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+    import {
+        createUserWithEmailAndPassword,
+        RecaptchaVerifier,
+        PhoneAuthProvider,
+        multiFactor,
+        PhoneMultiFactorGenerator,
+        GoogleAuthProvider,
+        signInWithPopup
+    } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
     import { doc, setDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
     let userCredential, verificationId;
@@ -53,39 +111,53 @@
     window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { 'size': 'invisible' });
 
     continueBtn.addEventListener('click', () => {
+        if (!document.getElementById('email').value || document.getElementById('password').value.length < 6) {
+            return alert("有効なメールアドレスと6文字以上のパスワードを入力してください。");
+        }
         emailPasswordSection.style.display = 'none';
         phoneSection.classList.remove('hidden');
     });
 
     sendSmsBtn.addEventListener('click', async () => {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
         const phoneNumber = document.getElementById('phone').value;
+
         try {
+            userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            const session = await multiFactor(user).getSession();
+            const phoneInfoOptions = { phoneNumber, session };
             const phoneAuthProvider = new PhoneAuthProvider(auth);
-            verificationId = await phoneAuthProvider.verifyPhoneNumber(phoneNumber, window.recaptchaVerifier);
+
+            verificationId = await phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, window.recaptchaVerifier);
+
             phoneSection.classList.add('hidden');
             smsCodeSection.classList.remove('hidden');
             alert('SMSを送信しました。');
+
         } catch (error) {
-            alert('SMS送信エラー: ' + error.message);
+            alert('ユーザー作成またはSMS送信エラー: ' + error.message);
+            emailPasswordSection.style.display = 'block';
+            phoneSection.classList.add('hidden');
+            if (auth.currentUser) {
+                await auth.currentUser.delete();
+            }
         }
     });
 
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
         const code = document.getElementById('sms-code').value;
 
         try {
-            userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            const { user } = userCredential;
-
             const cred = PhoneAuthProvider.credential(verificationId, code);
             const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
-            await multiFactor(user).enroll(multiFactorAssertion, `PhoneNumber`);
+            await multiFactor(userCredential.user).enroll(multiFactorAssertion, `PhoneNumber`);
 
-            await setDoc(doc(db, "users", user.uid), {
-                email: user.email,
+            await setDoc(doc(db, "users", userCredential.user.uid), {
+                email: userCredential.user.email,
                 phoneNumber: document.getElementById('phone').value,
                 createdAt: new Date().toISOString()
             });
@@ -96,6 +168,5 @@
         }
     });
 </script>
-
 </body>
 </html>

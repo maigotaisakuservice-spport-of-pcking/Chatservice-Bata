@@ -1,9 +1,8 @@
 <script type="module">
-    import { auth } from './app.js';
+    import { auth, db } from './app.js';
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+    import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
-    const db = getFirestore();
     const emailSpan = document.getElementById('userEmail');
     const displayNameInput = document.getElementById('displayName');
     const saveBtn = document.getElementById('saveBtn');
@@ -44,9 +43,8 @@
       const userRef = doc(db, `users/${uid}`);
       try {
         await setDoc(userRef, {
-          // email is already set on user creation, we only need to update displayName
           displayName: name
-        }, { merge: true }); // Use merge to avoid overwriting other fields like publicKey or phoneNumber
+        }, { merge: true });
         alert('保存しました');
       } catch (error) {
         console.error("プロフィールの保存に失敗しました:", error);

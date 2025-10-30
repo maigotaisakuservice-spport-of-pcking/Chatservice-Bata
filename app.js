@@ -1,12 +1,8 @@
 // app.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-analytics.js";
-import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-// RTDB imports - aliasing them to avoid name conflicts
-import { getDatabase, ref as rtdbRef, set as rtdbSet, push as rtdbPush, onValue as rtdbOnValue, update as rtdbUpdate } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
-// Firestore imports
-import { getFirestore, doc, getDoc, setDoc, collection, addDoc, onSnapshot, serverTimestamp, query, orderBy, updateDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
-
+import { getAuth } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+import { getDatabase } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDKKV9dakvsP8BCjjYvsFO_haJ5D98-Mu4",
@@ -20,18 +16,13 @@ const firebaseConfig = {
   };
 
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const auth = getAuth();
-const db_rtdb = getDatabase(); // Realtime Database
-const db_firestore = getFirestore(); // Firestore
+const auth = getAuth(app);
+const db = getFirestore(app); // Firestore as the primary DB
+const rtdb = getDatabase(app); // Realtime Database for specific use cases (like public keys)
 
 export {
-  app, analytics, auth,
-  // RTDB
-  db_rtdb, rtdbRef, rtdbSet, rtdbPush, rtdbOnValue, rtdbUpdate,
-  // Firestore
-  db_firestore, doc, getDoc, setDoc, collection, addDoc, onSnapshot, serverTimestamp, query, orderBy, updateDoc, deleteDoc, getDocs,
-  // Auth
-  signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup,
-  createUserWithEmailAndPassword, sendPasswordResetEmail, signOut
+  app,
+  auth,
+  db,    // Export Firestore as 'db'
+  rtdb   // Export Realtime Database as 'rtdb'
 };
