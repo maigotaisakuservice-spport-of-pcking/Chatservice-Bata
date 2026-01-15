@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-import { getFirestore, doc, onSnapshot, collection, addDoc, updateDoc, deleteDoc, serverTimestamp, getDoc, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+import { getFirestore, doc, onSnapshot, collection, addDoc, updateDoc, deleteDoc, serverTimestamp, getDoc, query, orderBy, getDocs, limit, Timestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 import { generateKeyPair, exportPublicKey, importPublicKey, deriveSharedSecret, encryptMessage, decryptMessage } from "./crypto.js";
 
 let app, auth, db;
@@ -43,20 +43,49 @@ export function init() {
     onAuthStateChanged(auth, user => {
         if (user) {
             currentUser = user;
+            joinChat();
         } else {
-            signInAnonymously(auth).catch(e => console.error("Anon sign-in failed:", e));
+            // Enforce login - no anonymous users
+            alert("この機能を利用するにはログインが必要です。");
+            window.location.href = "index.html";
         }
-        if(currentUser) joinChat();
     });
 }
 
 async function joinChat() {
     const chatDoc = await getDoc(chatDocRef);
     if (!chatDoc.exists()) {
-        messagesDiv.innerHTML = "<p>エラー: チャットは存在しないか削除されました。</p>";
+        messagesDiv.innerHTML = "<p>エラー: チャットは存在しないか、有効期限が切れて削除されました。</p>";
         disableChat();
         return;
     }
+
+    // --- Automatic Deletion Logic ---
+    // NOTE: This check is client-side and only runs when a user loads this page.
+    // A robust, server-side implementation (e.g., using Cloud Functions) would be
+    // required to reliably delete chats that have been abandoned for over an hour.
+    const messagesColRef = collection(db, "temporary_chats", chatId, "messages");
+    const lastMessageQuery = query(messagesColRef, orderBy("timestamp", "desc"), limit(1));
+    const lastMessageSnapshot = await getDocs(lastMessageQuery);
+
+    let lastActivityTime;
+    if (!lastMessageSnapshot.empty) {
+        // Use the timestamp of the last message
+        lastActivityTime = lastMessageSnapshot.docs[0].data().timestamp;
+    } else {
+        // If no messages, use the chat creation time
+        lastActivityTime = chatDoc.data().createdAt;
+    }
+
+    if (lastActivityTime && lastActivityTime.toDate) {
+        const oneHourAgo = Timestamp.now().toMillis() - (60 * 60 * 1000);
+        if (lastActivityTime.toMillis() < oneHourAgo) {
+            messagesDiv.innerHTML = "<p>最後の活動から1時間以上経過したため、このチャットは自動的に削除されました。</p>";
+            await deleteChat(false); // Delete without confirmation
+            return;
+        }
+    }
+    // --- End of Automatic Deletion Logic ---
 
     keyPair = await generateKeyPair();
     const publicKey = await exportPublicKey(keyPair.publicKey);
@@ -115,10 +144,16 @@ function listenForMessages() {
         messagesDiv.innerHTML = '';
         for (const doc of snapshot.docs) {
             const msg = doc.data();
+            if (!sharedKey) continue; // Don't try to decrypt if key is not ready
             const div = document.createElement('div');
             div.classList.add('message');
-            const decryptedText = await decryptMessage(msg.text, sharedKey);
-            div.textContent = decryptedText;
+            try {
+                const decryptedText = await decryptMessage(msg.text, sharedKey);
+                div.textContent = decryptedText;
+            } catch (e) {
+                div.textContent = "[復号化エラー]";
+                console.error("Decryption failed:", e);
+            }
             div.classList.add(msg.sender === currentUser.uid ? 'sent' : 'received');
             messagesDiv.appendChild(div);
         }
@@ -140,27 +175,36 @@ async function sendMessage(e) {
     messageInput.value = '';
 }
 
-async function deleteChat() {
-    if (!confirm("本当にこのチャットを削除しますか？")) return;
+async function deleteChat(confirmFirst = true) {
+    if (confirmFirst && !confirm("本当にこのチャットを削除して退出しますか？全てのメッセージが完全に消去されます。")) return;
+
     disableChat();
     if (unsubscribe) unsubscribe();
+
+    // Delete all messages in the subcollection
     const messagesColRef = collection(db, "temporary_chats", chatId, "messages");
     const messagesSnapshot = await getDocs(messagesColRef);
     const deletePromises = messagesSnapshot.docs.map(doc => deleteDoc(doc.ref));
     await Promise.all(deletePromises);
+
+    // Delete the main chat document
     await deleteDoc(chatDocRef);
-    messagesDiv.innerHTML = "<p>チャットを削除しました。</p>";
+
+    if (confirmFirst) {
+        messagesDiv.innerHTML = "<p>チャットを削除しました。</p>";
+    }
 }
 
 function enableChat() {
     messageInput.disabled = false;
     sendButton.disabled = false;
     messageForm.addEventListener('submit', sendMessage);
-    deleteButton.addEventListener('click', deleteChat);
+    deleteButton.addEventListener('click', () => deleteChat(true));
 }
 
 function disableChat() {
     messageInput.disabled = true;
     sendButton.disabled = true;
-    deleteButton.removeEventListener('click', deleteChat);
+    deleteButton.removeEventListener('click', () => deleteChat(true));
+    if (messageForm) messageForm.removeEventListener('submit', sendMessage);
 }
