@@ -1,11 +1,58 @@
+// temp_chat.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-import { getFirestore, doc, onSnapshot, collection, addDoc, updateDoc, deleteDoc, serverTimestamp, getDoc, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, query, orderBy, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
 import { generateKeyPair, exportPublicKey, importPublicKey, deriveSharedSecret, encryptMessage, decryptMessage } from "./crypto.js";
 
-let app, auth, db;
+// --- Firebase Config & Initialization ---
+const firebaseConfig = {
+    apiKey: "AIzaSyDKKV9dakvsP8BCjjYvsFO_haJ5D98-Mu4",
+    authDomain: "chat-go-enterprise.firebaseapp.com",
+    databaseURL: "https://chat-go-enterprise-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "chat-go-enterprise",
+    storageBucket: "chat-go-enterprise.firebasestorage.app",
+    messagingSenderId: "947179164013",
+    appId: "1:947179164013:web:aa0f1c45cfdbfe1eac4a64",
+    measurementId: "G-47P31E2TDN"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const rtdb = getDatabase(app);
+
+let currentUser, chatId, chatDocRef, keyPair, sharedKey;
+let messagesUnsubscribe, chatUnsubscribe;
+let otherUserId = null;
 let messagesDiv, messageForm, messageInput, sendButton, deleteButton;
-let currentUser, chatId, chatDocRef, unsubscribe, keyPair, sharedKey;
+
+// --- Main Initialization ---
+export function init() {
+    setupDOM();
+    const params = new URLSearchParams(window.location.search);
+    chatId = params.get('id');
+    if (!chatId) {
+        messagesDiv.innerHTML = "<p>エラー: チャットIDが見つかりません。</p>";
+        return;
+    }
+
+    chatDocRef = doc(db, "temporary_chats", chatId);
+
+    onAuthStateChanged(auth, user => {
+        currentUser = user;
+        if (!currentUser) {
+            signInAnonymously(auth).then(cred => {
+                currentUser = cred.user;
+                joinChat();
+            });
+        } else {
+            joinChat();
+        }
+    });
+
+    window.addEventListener('beforeunload', deleteChat);
+    deleteButton.addEventListener('click', deleteChat);
+}
 
 function setupDOM() {
     messagesDiv = document.getElementById('messages');
@@ -15,113 +62,53 @@ function setupDOM() {
     deleteButton = document.getElementById('delete-chat-btn');
 }
 
-function initFirebase() {
-    const firebaseConfig = {
-        apiKey: "AIzaSyA7CWUhLBKG_Oabxxw_7RfBpSANUoDh42s",
-        authDomain: "moodmirror-login.firebaseapp.com",
-        projectId: "moodmirror-login",
-        storageBucket: "moodmirror-login.firebasestorage.app",
-        messagingSenderId: "1091670187554",
-        appId: "1:1091670187554:web:ce919c1fca5b660995b47b",
-    };
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
-}
-
-export function init() {
-    setupDOM();
-    initFirebase();
-
-    const params = new URLSearchParams(window.location.search);
-    chatId = params.get('id');
-    if (!chatId) {
-        messagesDiv.innerHTML = "<p>エラー: チャットIDが見つかりません。</p>";
-        return;
-    }
-    chatDocRef = doc(db, "temporary_chats", chatId);
-    onAuthStateChanged(auth, user => {
-        if (user) {
-            currentUser = user;
-        } else {
-            signInAnonymously(auth).catch(e => console.error("Anon sign-in failed:", e));
-        }
-        if(currentUser) joinChat();
-    });
-}
-
 async function joinChat() {
-    const chatDoc = await getDoc(chatDocRef);
-    if (!chatDoc.exists()) {
-        messagesDiv.innerHTML = "<p>エラー: チャットは存在しないか削除されました。</p>";
-        disableChat();
-        return;
-    }
-
     keyPair = await generateKeyPair();
     const publicKey = await exportPublicKey(keyPair.publicKey);
+    await set(ref(rtdb, `users/${currentUser.uid}/publicKey`), publicKey);
 
-    const participants = chatDoc.data().participants || [];
-    const publicKeys = chatDoc.data().publicKeys || {};
-
-    if (participants.length >= 2 && !participants.includes(currentUser.uid)) {
-        messagesDiv.innerHTML = "<p>エラー: このチャットは満員です。</p>";
-        disableChat();
-        return;
-    }
-
-    const updates = {};
-    if (!participants.includes(currentUser.uid)) {
-        updates.participants = [...participants, currentUser.uid];
-    }
-    if (!publicKeys[currentUser.uid]) {
-        publicKeys[currentUser.uid] = publicKey;
-        updates.publicKeys = publicKeys;
-    }
-
-    if (Object.keys(updates).length > 0) {
+    const chatDoc = await getDoc(chatDocRef);
+    const updates = { [`participants.${currentUser.uid}`]: true };
+    if (!chatDoc.exists()) {
+        await setDoc(chatDocRef, { participants: { [currentUser.uid]: true } });
+    } else {
         await updateDoc(chatDocRef, updates);
     }
 
     enableChat();
-    listenForKeysAndMessages();
+    listenForData();
 }
 
-function listenForKeysAndMessages() {
-    unsubscribe = onSnapshot(chatDocRef, async (doc) => {
+function listenForData() {
+    chatUnsubscribe = onSnapshot(chatDocRef, async (doc) => {
         if (!doc.exists()) {
-            messagesDiv.innerHTML = "<p>チャットが削除されました。</p>";
             disableChat();
-            if (unsubscribe) unsubscribe();
+            messagesDiv.innerHTML = "<p>チャットは削除されました。</p>";
             return;
         }
+        const participants = doc.data().participants || {};
+        otherUserId = Object.keys(participants).find(uid => uid !== currentUser.uid);
 
-        const data = doc.data();
-        const keys = data.publicKeys || {};
-        const otherUserId = Object.keys(keys).find(uid => uid !== currentUser.uid);
-
-        if (keys[currentUser.uid] && otherUserId && keys[otherUserId] && !sharedKey) {
-            const theirPublicKey = await importPublicKey(keys[otherUserId]);
-            sharedKey = await deriveSharedSecret(keyPair.privateKey, theirPublicKey);
-            listenForMessages();
+        if (otherUserId && !sharedKey) {
+            const friendKeySnapshot = await get(ref(rtdb, `users/${otherUserId}/publicKey`));
+            if (friendKeySnapshot.exists()) {
+                const theirPublicKey = await importPublicKey(friendKeySnapshot.val());
+                sharedKey = await deriveSharedSecret(keyPair.privateKey, theirPublicKey);
+            }
         }
     });
-}
 
-function listenForMessages() {
     const messagesColRef = collection(db, "temporary_chats", chatId, "messages");
-    const q = query(messagesColRef, orderBy("timestamp"));
-    onSnapshot(q, async (snapshot) => {
+    messagesUnsubscribe = onSnapshot(query(messagesColRef, orderBy("timestamp")), (snapshot) => {
         messagesDiv.innerHTML = '';
-        for (const doc of snapshot.docs) {
+        snapshot.forEach(async (doc) => {
             const msg = doc.data();
-            const div = document.createElement('div');
-            div.classList.add('message');
-            const decryptedText = await decryptMessage(msg.text, sharedKey);
-            div.textContent = decryptedText;
-            div.classList.add(msg.sender === currentUser.uid ? 'sent' : 'received');
-            messagesDiv.appendChild(div);
-        }
+            if (sharedKey) {
+                const div = document.createElement('div');
+                div.textContent = await decryptMessage(msg.text, sharedKey);
+                messagesDiv.appendChild(div);
+            }
+        });
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
 }
@@ -130,37 +117,37 @@ async function sendMessage(e) {
     e.preventDefault();
     const text = messageInput.value.trim();
     if (!text || !sharedKey) return;
+
     const encryptedText = await encryptMessage(text, sharedKey);
-    const messagesColRef = collection(db, "temporary_chats", chatId, "messages");
-    await addDoc(messagesColRef, {
+    await addDoc(collection(db, "temporary_chats", chatId, "messages"), {
         text: encryptedText,
         sender: currentUser.uid,
-        timestamp: serverTimestamp()
+        timestamp: new Date()
     });
     messageInput.value = '';
 }
 
 async function deleteChat() {
-    if (!confirm("本当にこのチャットを削除しますか？")) return;
     disableChat();
-    if (unsubscribe) unsubscribe();
     const messagesColRef = collection(db, "temporary_chats", chatId, "messages");
     const messagesSnapshot = await getDocs(messagesColRef);
-    const deletePromises = messagesSnapshot.docs.map(doc => deleteDoc(doc.ref));
-    await Promise.all(deletePromises);
-    await deleteDoc(chatDocRef);
-    messagesDiv.innerHTML = "<p>チャットを削除しました。</p>";
+    await Promise.all(messagesSnapshot.docs.map(d => deleteDoc(d.ref)));
+    if (chatDocRef) {
+      await deleteDoc(chatDocRef);
+    }
 }
 
 function enableChat() {
     messageInput.disabled = false;
     sendButton.disabled = false;
     messageForm.addEventListener('submit', sendMessage);
-    deleteButton.addEventListener('click', deleteChat);
 }
 
 function disableChat() {
+    if (messagesUnsubscribe) messagesUnsubscribe();
+    if (chatUnsubscribe) chatUnsubscribe();
+    window.removeEventListener('beforeunload', deleteChat);
+    messageForm.removeEventListener('submit', sendMessage);
     messageInput.disabled = true;
     sendButton.disabled = true;
-    deleteButton.removeEventListener('click', deleteChat);
 }

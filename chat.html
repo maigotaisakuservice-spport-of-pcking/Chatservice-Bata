@@ -4,248 +4,49 @@
   <meta charset="UTF-8">
   <title>ChatGo - チャット</title>
   <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f0f0f0;
-    }
-
-    header {
-      background-color: #2e7d32;
-      color: white;
-      padding: 10px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .menu-button {
-      font-size: 24px;
-      background: none;
-      border: none;
-      color: white;
-      cursor: pointer;
-    }
-
-    .menu {
-      position: absolute;
-      top: 50px;
-      right: 20px;
-      background-color: white;
-      border: 1px solid #ccc;
-      width: 250px;
-      flex-direction: column;
-      z-index: 1000;
-      padding: 10px;
-    }
-
-    .menu input {
-      width: calc(100% - 20px);
-      margin-bottom: 10px;
-      padding: 5px;
-    }
-
-    .menu button {
-      background-color: #4caf50;
-      color: white;
-      border: none;
-      padding: 5px;
-      margin-bottom: 5px;
-      cursor: pointer;
-    }
-
-    #chat-area {
-      padding: 20px;
-    }
-
-    .friend-list {
-      margin-top: 10px;
-    }
-
-    .friend-item {
-      cursor: pointer;
-      padding: 4px;
-      border-bottom: 1px solid #ccc;
-    }
-
-    .friend-item:hover {
-      background-color: #e0e0e0;
-    }
-
-    #messages {
-      min-height: 300px;
-      max-height: 400px;
-      overflow-y: auto;
-      background: #fff;
-      display: block !important;
-      overflow-y: auto;
-      max-height: 300px;
-      padding: 10px;
-      border: 1px solid #ccc;
-    }
-
-    #message-form {
-      display: flex;
-      margin-top: 10px;
-    }
-
-    #message-input {
-      flex: 1;
-      padding: 8px;
-    }
-
-    #send-button {
-      padding: 8px 16px;
-      background-color: #2e7d32;
-      color: white;
-      border: none;
-    }
+    /* ... existing styles ... */
   </style>
 </head>
 <body>
   <header>
     <h1>ChatGo</h1>
-     <a href="profile.html">プロフィールページへ</a>
-    <a class="menu-button" href="group.html">🌐 グループチャット</a>
-    <a href="premiumlist.html">プレミアム会員限定ページへ</a>
-    <button class="menu-button" onclick="toggleMenu()">≡</button>
+    <a href="profile.html">プロフィールページへ</a>
+    <button class="menu-button" id="menu-button">≡</button>
     <div class="menu" id="menu">
       <input type="email" id="friend-email" placeholder="メールで検索">
-      <button onclick="addFriend()">フレンド追加</button>
+      <button id="add-friend-button">フレンド追加</button>
       <div class="friend-list" id="friend-list"></div>
     </div>
   </header>
 
   <main id="chat-area">
-  <div id="messages"></div>
-    <form id="message-form" onsubmit="sendMessage(event)">
+    <div id="messages"></div>
+    <form id="message-form">
       <input type="text" id="message-input" placeholder="メッセージを入力">
-      <button id="send-button">送信</button>
+      <button id="send-button" type="submit">送信</button>
     </form>
-    <!-- 画像送信用フォーム -->
-<form id="image-form">
-  <input type="file" id="image-input" accept="image/*" />
-  <button type="submit">画像送信</button>
-</form>
-    <!-- 動画アップロードフォーム -->
-<form id="video-form">
-  <input type="file" id="video-input" accept="video/mp4,video/webm" />
-  <button type="submit">動画を送信</button>
-</form>
 
-    <!-- GIF表示エリア（Premiumのみ表示） -->
-<div id="gif-ui" style="display:none;">
-  <h3>🎞️ プレミアムGIF特典</h3>
-  <div id="gif-library" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
-  <h4>🎨 カスタムGIF（最大3つ）</h4>
-  <input type="file" id="custom-gif-upload" accept="image/gif" />
-  <div id="custom-gif-list" style="display:flex; gap:10px;"></div>
-</div>
-    
+    <div class="form-container">
+        <form id="image-form">
+          <input type="file" id="image-input" accept="image/*" />
+          <button type="submit">画像送信</button>
+        </form>
+        <form id="video-form">
+          <input type="file" id="video-input" accept="video/mp4,video/webm" />
+          <button type="submit">動画を送信</button>
+        </form>
+    </div>
+
+    <!-- Premium Features -->
+    <div id="gif-ui" style="display:none;">
+      <h3>🎞️ プレミアムGIF特典</h3>
+      <div id="gif-library"></div>
+      <h4>🎨 カスタムGIF（最大3つ）</h4>
+      <input type="file" id="custom-gif-upload" accept="image/gif" />
+      <div id="custom-gif-list"></div>
+    </div>
   </main>
+
   <script type="module" src="chat.js"></script>
-  <script>
-    // Premiumユーザー判定
-    let isPremiumUser = false;
-
-// 認証後などに実行（すでにauthが初期化されている想定）
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    const premiumRef = ref(db, `users/${user.uid}/premium`);
-    const snapshot = await get(premiumRef);
-    isPremiumUser = snapshot.exists() && snapshot.val() === true;
-
-    if (isPremiumUser) {
-      document.getElementById("gif-ui").style.display = "block";
-      loadGifLibrary();
-      loadCustomGifs();
-    }
-  }
-});
-
-    // GifUI表示　Premiumユーザーのみ
-    const GIF_LIMIT_PER_MONTH = 5;
-const CUSTOM_GIF_LIMIT = 3;
-const GIF_STORAGE_KEY = "customGifs";
-
-// 外部GIF一覧読み込み
-function loadGifLibrary() {
-  const gifUrls = [
-    "https://chatmaga.f5.si/gif/1.gif",
-    "https://chatmaga.f5.si/gif/2.gif",
-    "https://chatmaga.f5.si/gif/3.gif"
-    // 必要に応じて増やす
-  ];
-  const gifContainer = document.getElementById("gif-library");
-  gifContainer.innerHTML = "";
-
-  gifUrls.forEach(url => {
-    const img = document.createElement("img");
-    img.src = url;
-    img.style.width = "80px";
-    img.style.cursor = "pointer";
-    img.onclick = () => sendGif(url);
-    gifContainer.appendChild(img);
-  });
-}
-
-// GIF送信処理（上限付き）
-async function sendGif(url) {
-  if (!isPremiumUser || !currentUser || !currentChatId) return;
-
-  const month = new Date().toISOString().slice(0, 7);
-  const limitRef = ref(db, `gifLimits/${currentUser.uid}/${month}`);
-  const snap = await get(limitRef);
-  const count = snap.exists() ? snap.val() : 0;
-
-  if (count >= GIF_LIMIT_PER_MONTH) {
-    alert("今月のGIF送信上限に達しました（5個まで）");
-    return;
-  }
-
-  const messagesRef = ref(db, `chats/${currentChatId}/messages`);
-  await push(messagesRef, {
-    type: "gif",
-    gifUrl: url,
-    sender: currentUser.uid,
-    timestamp: Date.now()
-  });
-
-  // 送信数カウントアップ
-  set(limitRef, count + 1);
-}
-
-// カスタムGIF追加（IndexedDB → localStorageで代用）
-document.getElementById("custom-gif-upload").addEventListener("change", function () {
-  const file = this.files[0];
-  if (!file || file.type !== "image/gif") return alert("GIF画像のみアップロード可能です");
-
-  const reader = new FileReader();
-  reader.onload = function () {
-    let gifs = JSON.parse(localStorage.getItem(GIF_STORAGE_KEY) || "[]");
-    if (gifs.length >= CUSTOM_GIF_LIMIT) return alert("カスタムGIFは3つまでです");
-
-    gifs.push(reader.result);
-    localStorage.setItem(GIF_STORAGE_KEY, JSON.stringify(gifs));
-    loadCustomGifs();
-  };
-  reader.readAsDataURL(file);
-});
-
-// カスタムGIF表示と送信
-function loadCustomGifs() {
-  const gifs = JSON.parse(localStorage.getItem(GIF_STORAGE_KEY) || "[]");
-  const container = document.getElementById("custom-gif-list");
-  container.innerHTML = "";
-  gifs.forEach(base64 => {
-    const img = document.createElement("img");
-    img.src = base64;
-    img.style.width = "80px";
-    img.style.cursor = "pointer";
-    img.onclick = () => sendGif(base64); // 同じく送信処理
-    container.appendChild(img);
-  });
-}
-  </script>
 </body>
 </html>

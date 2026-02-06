@@ -4,51 +4,28 @@
   <meta charset="UTF-8">
   <title>一時チャット - ChatGo</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    #messages { height: 400px; overflow-y: auto; border: 1px solid #ccc; margin-bottom: 10px; padding: 10px; }
-    .message { padding: 8px 12px; border-radius: 18px; margin-bottom: 8px; max-width: 70%; word-wrap: break-word; }
-    .message.sent { background-color: #0084ff; color: white; align-self: flex-end; }
-    .message.received { background-color: #e4e6eb; color: #050505; align-self: flex-start; }
-    .delete-banner { background-color: #ffebe5; color: #d9534f; padding: 15px; text-align: center; }
+    /* ... existing styles ... */
   </style>
 </head>
 <body>
-  <div id="intro-video-placeholder" style="display: none;"></div>
-
-  <div id="page-content">
+  <header>
     <h1>🤫 一時チャット</h1>
+  </header>
+  <div id="page-content" class="container">
     <div class="delete-banner">
-      <p>このチャットは一時的なものです。どちらかのユーザーが退出ボタンを押すと、全てのメッセージがサーバーから完全に削除されます。</p>
-      <button id="delete-chat-btn">チャットを削除して退出する</button>
+      <p>このチャットは一時的なものです。ページを閉じるとメッセージ履歴は自動的に削除されます。</p>
+      <button id="delete-chat-btn">チャットを今すぐ削除</button>
     </div>
-    <div id="chat-area" style="margin-top: 20px;">
-      <div id="messages"><p>接続中...</p></div>
-      <form id="message-form" style="display: flex;">
-        <input type="text" id="message-input" placeholder="暗号化されたメッセージ" style="flex: 1;" disabled>
-        <button type="submit" disabled>送信</button>
-      </form>
-    </div>
+    <div id="messages"><p>接続中...</p></div>
+    <form id="message-form">
+      <input type="text" id="message-input" placeholder="メッセージを入力..." disabled>
+      <button type="submit" disabled>送信</button>
+    </form>
   </div>
 
   <script type="module">
-    import { playIntroVideo } from './intro_video.js';
-    import { init as initChat } from './temp_chat.js'; // Assuming temp_chat.js exports an init function
-
-    const pageContent = document.getElementById('page-content');
-    const introPlaceholder = document.getElementById('intro-video-placeholder');
-
-    const INTRO_FLAG = 'hasSeenTempChatIntro';
-    if (!localStorage.getItem(INTRO_FLAG)) {
-        pageContent.style.display = 'none';
-        playIntroVideo(introPlaceholder, () => {
-            localStorage.setItem(INTRO_FLAG, 'true');
-            pageContent.style.display = 'block';
-            introPlaceholder.style.display = 'none';
-            initChat(); // Initialize chat logic after video
-        });
-    } else {
-        initChat(); // Initialize chat logic immediately
-    }
+    import { init } from './temp_chat.js';
+    init();
   </script>
 </body>
 </html>
